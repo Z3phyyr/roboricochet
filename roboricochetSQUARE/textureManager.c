@@ -1,4 +1,5 @@
 #include "textureManager.h"
+#include <string.h>
 
 
 bool inBounds(int x, int min, int max) {
@@ -154,7 +155,8 @@ int PrintSubTexture (SDL_Renderer* renderer, dimTexture* atlas, int x, int y, in
 
 
 
-int PrintText (SDL_Renderer* renderer, const char* text, char* fontPath, const SDL_Color color, const int fontSize, const int x, const int y) {
+int PrintText (SDL_Renderer* renderer, const char* text, const char* fontPath, const SDL_Color color, const int fontSize, const int x, const int y) {
+	
 	TTF_Font* font = TTF_OpenFont(fontPath, fontSize);
 
 	if (font == NULL) return -1;
@@ -173,10 +175,65 @@ int PrintText (SDL_Renderer* renderer, const char* text, char* fontPath, const S
 
 	SDL_Rect destrect = {x, y, w, h};
 	
-	SDL_RenderCopy(renderer, texture, NULL, &destrect);
-
-
+	if (SDL_RenderCopy(renderer, texture, NULL, &destrect) != 0) return -1;
 	SDL_DestroyTexture(texture);
 
 	return 0;
+}
+
+int PrintWrappedText(SDL_Renderer* renderer, const char* text, const char* fontPath, 
+			const SDL_Color color, const int fontSize, const int x, const int y, const Uint32 wrapSize) {
+	
+	TTF_Font* font = TTF_OpenFont(fontPath, fontSize);
+
+	if (font == NULL) return -1;
+	
+	SDL_Surface* surface = TTF_RenderText_Solid_Wrapped(font, text, color, wrapSize);
+	TTF_CloseFont(font);
+
+	if (surface == NULL) return -1;
+
+	int w = surface->w, h = surface->h;
+
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+	SDL_FreeSurface(surface);
+
+	if (texture == NULL) return -1;
+
+	SDL_Rect destrect = {x, y, w, h};
+	
+	if (SDL_RenderCopy(renderer, texture, NULL, &destrect) != 0) return -1;
+	SDL_DestroyTexture(texture);
+
+	return 0;
+}
+
+
+int PrintFormatText(SDL_Renderer* renderer, const char* fontPath, 
+			const SDL_Color color, const int fontSize, const int x, const int y, const Uint32 wrapSize,
+			const char* text, ...) {
+	
+	char* line = "";
+	int real_y = y;
+
+	for (int i=0; text[i] != '\0'; i++) {
+		switch(text[i]) {
+			case '\n':
+				PrintText(renderer, line, fontPath, color, fontSize, x, real_y);
+				real_y = real_y + fontSize;
+				break;
+
+			case '%':
+				switch(text[i+1]) {
+					case 'd':
+						break;
+				}
+				break;
+
+			default: 
+				line = strcat(line, &text[i]);
+				break;
+		}
+	}
+
 }

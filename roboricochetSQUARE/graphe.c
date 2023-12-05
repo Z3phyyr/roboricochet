@@ -213,17 +213,6 @@ void AfficherSList(SList* c) {
 	AfficherSList(c->suivant);
 }
 
-void AfficherChemin(Chemin* c) {
-	if (c == NULL) {
-		return;
-	}
-	for (int k=0; k<N_Robots; k++) {
-		printf("(%d, %d)  ", c->positions[k].i, c->positions[k].j);
-	}
-	printf("\n");
-	AfficherChemin(c->suivant);
-}
-
 void FreeChemin (Chemin* c) {
 	if (c == NULL) return;
 	Chemin* suivant = c->suivant;
@@ -251,12 +240,13 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	InitHashDist(&d);
 	SMinStack file;
 	InitSMinStack(&file);
-	InsererStack(&file, s);
 	s.dist = 0;
+	InsererStack(&file, s);
 	Sommet final;
 	final.dist = -1;
 	Sommet v;
 	Sommet w;
+	SList* descendants = NULL;
 	while (file.remplissage != 0) {
 		ExtraireMinStack(&file, &v);
 		if (tours % 1000 == 0) printf("(%d, %d) ; dist : %d ; tours : %d\n", v.positions[couleur].i, v.positions[couleur].j, v.dist, tours);
@@ -265,7 +255,7 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 			CopieSommet(v, &final);
 			FreeSMinStack(&file);
 		} else {
-			SList* descendants = DescendantsDirects(v, horizontalWalls, verticalWalls);
+			descendants = DescendantsDirects(v, horizontalWalls, verticalWalls);
 			while (descendants != NULL) {
 				descendants = ExtraireSList(descendants, &w);
 				int newdist = RecupererDist(&d, w);
@@ -287,23 +277,24 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	}
 	printf("\nDistance finale = %d\n", final.dist);
 	//t non accessible (ne devrait pas arriver en pratique)
-	if (final.dist == -1) return (Zipper) {NULL, NULL};
+	if (final.dist == -1) return (Zipper) {NULL, NULL, 0};
 	
 	//Construction du chemin à l'aide de h
-	Chemin* chemin = AjouterChemin(NULL, final);
+	Chemin* chemin = NULL;
 	Sommet courant;
 	CopieSommet(final, &courant);
 	while (!EgaliteSommet(courant, s)) {
-		courant = ChercheHashTbl(&h, courant);
 		if (courant.dist == -1) {
 			//Echec de récupération du sommet
 			printf("Echec de récupération d'un sommet\n\n");
-			return (Zipper){NULL, NULL};
+			return (Zipper){NULL, NULL, 0};
 		} else {
 			chemin = AjouterChemin(chemin, courant);
 		}
+		courant = ChercheHashTbl(&h, courant);
 	}
 	FreeHashTbl(&h);
-	Zipper z = {NULL, chemin};
+	Zipper z = {NULL, chemin, final.dist};
+	
 	return z;
 }

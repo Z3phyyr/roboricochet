@@ -43,7 +43,8 @@ dimTexture* CreateDimTextureFromText (SDL_Renderer* renderer, const char* text,
 
 int SimpleTexturePrint (SDL_Renderer* renderer, dimTexture* texture);
 int PrintSubTexture (SDL_Renderer* renderer, dimTexture* atlas, int x, int y, int num_x, int num_y, int dest_size);
-
-
+int PrintText (SDL_Renderer* renderer, const char* text, const char* fontPath, const SDL_Color color, const int fontSize, const int x, const int y);
+int PrintWrappedText(SDL_Renderer* renderer, const char* text, const char* fontPath, 
+			const SDL_Color color, const int fontSize, const int x, const int y, const Uint32 wrapSize);
 
 #endif //TEXTUREMANAGER

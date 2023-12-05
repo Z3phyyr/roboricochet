@@ -1,21 +1,12 @@
 #include "boardManager.h"
 
 
-const int milieu = BOARD_SIZE / 2;
-
-const SDL_Color white = {255, 255, 255, 255};
-const SDL_Color black = {0, 0, 0, 255};
-const SDL_Color darkGrey = {100, 100, 100, 255};
-const SDL_Color beige = {227,212,173, 255};
-
 const SDL_Color sb_red = {160, 0, 5, 150};
 const SDL_Color sb_blue = {23, 78, 134, 150};
 const SDL_Color sb_green = {0, 127, 12, 150};
 const SDL_Color sb_yellow = {240, 244, 0, 150};
 
-const int x_offset = 100;
-const int y_offset = 50;
-const int sq_size = 40;
+
 
 //const int WallNumber = BOARD_SIZE * 2;
 
@@ -38,6 +29,14 @@ int RandomUnion (int min1, int max1, int min2, int max2) {
 	return r2;
 }
 
+void RandomPositionPasCentre(int* i, int* j) {
+	*i = RandomInt(1, BOARD_SIZE - 2);
+	if (*i == milieu - 1 || *i == milieu) {
+		*j = RandomUnion(1, milieu - 2, milieu + 1, BOARD_SIZE - 2);
+	} else {
+		*j = RandomInt(1, BOARD_SIZE - 2);
+	}
+}
 
 int PrintVerticalWall (SDL_Renderer* renderer, int k, int m) {
 	SDL_Rect rect = {x_offset + m*sq_size - 2, y_offset + k*sq_size, 4, sq_size};
@@ -54,96 +53,143 @@ int DrawStartingBlock(SDL_Renderer* renderer, int i, int j, SDL_Color color) {
 	SetColor(renderer, color);
 	int x = x_offset + i*sq_size;
 	int y = y_offset + j*sq_size;
-	const SDL_Rect rect = {x, y, sq_size, sq_size};
+	const SDL_Rect rect = {x + 2, y + 2, sq_size - 4, sq_size - 4};
 	if (SDL_RenderFillRect(renderer, &rect) < 0) return -1;
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 	return 0;
 }
 
 
-int DeplaceGauche(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel,
+/***************************AFFICHAGE DES CHEMINS***********************/
+
+
+
+
+
+int DeplaceGauche(SDL_Renderer* renderer, dimTexture* robots, dimTexture* jetons, Sommet* actuel,
 				   Square board[BOARD_SIZE][BOARD_SIZE], Zipper* z) {
 	
 	if (z->gauche == NULL) {
 		return 0;
 	}
+
+	//Copie de actuel en tête de droite
+		Chemin* new = malloc(sizeof(Chemin));
+		for (int k=0; k<N_Robots; k++) {
+			new->positions[k] = actuel->positions[k];
+		}
+		new->suivant = z->droite;
+		z->droite = new;
 	
+
 	for (int k=0; k<N_Robots; k++) {
 		Point p = z->gauche->positions[k];
 		if (actuel->positions[k].i != p.i || actuel->positions[k].j != p.j) {
 			int x = x_offset + p.i*sq_size + 2;
 			int y = y_offset + p.j*sq_size + 2;
-			Square sq = board[p.i][p.j];
+			Square old_sq = board[actuel->positions[k].i][actuel->positions[k].j];
 			int x_actuel = x_offset + actuel->positions[k].i*sq_size + 2;
 			int y_actuel = y_offset + actuel->positions[k].j*sq_size + 2;
+			
+			//Affiche le robot sur la nouvelle case
 			if (PrintSubTexture(renderer, robots, x, y, 
-						k, 0, sq_size - 2) != 0) return -1;
-			if (sq.startingBlock) {
-				if (DrawStartingBlock(renderer, p.i, p.j, sq.startColor) != 0) return -1;
-			} else {
-				SetColor(renderer, beige);
-				SDL_Rect rect = {x_actuel, y_actuel, sq_size - 4, sq_size - 4};
-				if (SDL_RenderFillRect(renderer, &rect) != 0) return -1;
+						k, 0, sq_size - 4) != 0) return -1;
+
+			//Efface la case précédente
+			SetColor(renderer, beige);
+			SDL_Rect rect = {x_actuel, y_actuel, sq_size - 4, sq_size - 4};
+			if (SDL_RenderFillRect(renderer, &rect) != 0) return -1;
+
+			//Affiche si besoin le jeton ou la case de départ sur l'ancienne case
+			if (old_sq.startingBlock) {
+				if (DrawStartingBlock(renderer, actuel->positions[k].i, 
+						actuel->positions[k].j, old_sq.startColor) != 0) {
+					return -1;
+				}
 			}
+			if (old_sq.finishSquare) {
+				if(PrintSubTexture(renderer, jetons, x_actuel, y_actuel, 
+								old_sq.finishColor, old_sq.finishElement, 
+								sq_size - 4) != 0) {
+					return -1;
+				}
+			}
+
+			//Copie de la tête du chemin de gauche dans actuel
 			(*actuel).positions[k] = p;
+			actuel->dist--;
 		}		
 	}
-	Chemin* new = malloc(sizeof(Chemin));
-	for (int k=0; k<N_Robots; k++) {
-		new->positions[k] = z->gauche->positions[k];
-	}
-	new->suivant = z->droite;
-	Chemin* suivantGauche = z->gauche->suivant;
-	free(z->gauche);
+	//Suppression de la tête du chemin de gauche 
+		Chemin* suivantGauche = z->gauche->suivant;
+		free(z->gauche);
+		z->gauche = suivantGauche;
 
-	z->gauche = suivantGauche;
-	z->droite = new;
-	return 0;
+	return 0;	
 }
 
-int DeplaceDroite(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel,
+int DeplaceDroite(SDL_Renderer* renderer, dimTexture* robots, dimTexture* jetons, Sommet* actuel,
 				   Square board[BOARD_SIZE][BOARD_SIZE], Zipper* z) {
 	
 	if (z->droite == NULL) {
 		return 0;
 	}
+
+	//Copie de actuel en tête de gauche
+		Chemin* new = malloc(sizeof(Chemin));
+		for (int k=0; k<N_Robots; k++) {
+			new->positions[k] = actuel->positions[k];
+		}
+		new->suivant = z->gauche;
+		z->gauche = new;
 	
+
 	for (int k=0; k<N_Robots; k++) {
 		Point p = z->droite->positions[k];
 		if (actuel->positions[k].i != p.i || actuel->positions[k].j != p.j) {
 			int x = x_offset + p.i*sq_size + 2;
 			int y = y_offset + p.j*sq_size + 2;
-			Square sq = board[p.i][p.j];
+			Square old_sq = board[actuel->positions[k].i][actuel->positions[k].j];
 			int x_actuel = x_offset + actuel->positions[k].i*sq_size + 2;
 			int y_actuel = y_offset + actuel->positions[k].j*sq_size + 2;
+			
+			//Affiche le robot sur la nouvelle case
 			if (PrintSubTexture(renderer, robots, x, y, 
 						k, 0, sq_size - 4) != 0) return -1;
-			if (sq.startingBlock) {
-				if (DrawStartingBlock(renderer, p.i, p.j, sq.startColor) != 0) return -1;
-			} else {
-				SetColor(renderer, beige);
-				SDL_Rect rect = {x_actuel, y_actuel, sq_size - 4, sq_size - 4};
-				if (SDL_RenderFillRect(renderer, &rect) != 0) return -1;
+
+			//Efface la case précédente
+			SetColor(renderer, beige);
+			SDL_Rect rect = {x_actuel, y_actuel, sq_size - 4, sq_size - 4};
+			if (SDL_RenderFillRect(renderer, &rect) != 0) return -1;
+
+			//Affiche si besoin le jeton ou la case de départ sur l'ancienne case
+			if (old_sq.startingBlock) {
+				if (DrawStartingBlock(renderer, actuel->positions[k].i, 
+						actuel->positions[k].j, old_sq.startColor) != 0) {
+					return -1;
+				}
 			}
+			if (old_sq.finishSquare) {
+				if(PrintSubTexture(renderer, jetons, x_actuel, y_actuel, 
+								old_sq.finishColor, old_sq.finishElement, 
+								sq_size - 4) != 0) {
+					return -1;
+				}
+			}
+
+			//Copie de la tête du chemin de droite dans actuel
 			(*actuel).positions[k] = p;
+			actuel->dist++;
 		}		
 	}
-	Chemin* new = malloc(sizeof(Chemin));
-	for (int k=0; k<N_Robots; k++) {
-		new->positions[k] = z->droite->positions[k];
-	}
-	new->suivant = z->gauche;
-	Chemin* suivantDroite = z->droite->suivant;
-	free(z->droite);
+	//Suppression de la tête du chemin de droite 
+		Chemin* suivantDroite = z->droite->suivant;
+		free(z->droite);
+		z->droite = suivantDroite;
 
-	z->gauche = new;
-	z->droite = suivantDroite;
 	return 0;	
 }
 
-int DrawChemin(Chemin* c) {
-	
-}
 
 /*****************************INIT*******************************/
 
@@ -152,19 +198,20 @@ int InitializeRoboRicochet(GameStruct* g, char* id) {
 
 	if (!SDL_strcmp(id, "r")) {
 		if (SetupEmptyBoard(g->renderer, g->board) < 0 ||
-		SetupRandomJetonsAndWalls(g->renderer, g->jetons, g->board, 
+		SetupRandomJetonsAndWalls(g->renderer, g->jetons, g->positionsJetons, g->board, 
 								  g->horizontalWalls, g->verticalWalls) < 0 ||
-		SetupRandomRobots(g->renderer, g->robots, g->board) < 0) {
+		SetupRandomRobots(g->renderer, g->robots, g->board, &g->actuel) < 0) {
 			return -1;
 		}
 	} else {
 		if (SetupEmptyBoard(g->renderer, g->board) < 0 ||
-		SetupNormalJetonsAndWalls(g->renderer, g->jetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
-		SetupNormalRobots(g->renderer, g->robots, g->board) < 0) {
+		SetupNormalJetonsAndWalls(g->renderer, g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
+		SetupNormalRobots(g->renderer, g->robots, &g->actuel, g->board) < 0) {
 			return -1;
 		}
 		
 	} 
+	AfficherBouton(g->renderer, &g->startButton);
 }
 
 int SetupEmptyBoard(SDL_Renderer* renderer, Square board[BOARD_SIZE][BOARD_SIZE]) {
@@ -186,7 +233,7 @@ int SetupEmptyBoard(SDL_Renderer* renderer, Square board[BOARD_SIZE][BOARD_SIZE]
 
 /*****************************SETUP NORMAL*************************************/
 
-int SetupNormalJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square board[BOARD_SIZE][BOARD_SIZE],
+int SetupNormalJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point positionsJetons[16], Square board[BOARD_SIZE][BOARD_SIZE],
 			bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1], bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1]) {
 	/*******************Initialisation********************/
 	for (int k=0; k<BOARD_SIZE; k++) {
@@ -269,17 +316,22 @@ int SetupNormalJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square
 		{5, 2}, {1, 13}, {10, 14}, {12, 6},
 		{9, 3}, {14, 13}, {3, 14}, {1, 6},
 		{13, 9}, {7, 5}, {13, 1}, {4, 9},
-		{6, 10}, {14, 4}, {2, 4}, {9, 12},
+		{6, 10}, {14, 4}, {2, 4}, {9, 11},
 		{7, 12}
 	};
+
+	for (int k=0; k<16; k++) {
+		positionsJetons[k] = place_jetons[k];
+	}
 	
 	for (int k=0; k<17; k++) {
 		Point p = place_jetons[k];
 		int x = x_offset + p.i*sq_size;
 		int y = y_offset + p.j*sq_size;
+		board[p.i][p.j].finishSquare = true;
 		board[p.i][p.j].finishElement = k/4;
 		board[p.i][p.j].finishColor = k%4;
-		if(PrintSubTexture(renderer, jetons, x, y, k%4, k/4, sq_size) < 0) return -1;
+		if(PrintSubTexture(renderer, jetons, x + 2, y + 2, k%4, k/4, sq_size - 4) < 0) return -1;
 	}
 		
 	/*******************Affichage des murs********************/
@@ -299,7 +351,7 @@ int SetupNormalJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square
 	return 0;
 }
 
-int SetupNormalRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[BOARD_SIZE][BOARD_SIZE]) {
+int SetupNormalRobots(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel, Square board[BOARD_SIZE][BOARD_SIZE]) {
 	SDL_Color sb_colors[] = {sb_blue, sb_red, sb_green, sb_yellow};
 	//INITIALISATION
 	for (int i=0; i<BOARD_SIZE; i++) {
@@ -317,10 +369,11 @@ int SetupNormalRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[B
 		int i = robo_positions[k].i, j = robo_positions[k].j;
 		int x = x_offset + i*sq_size;
 		int y = y_offset + j*sq_size;
+		actuel->positions[k] = robo_positions[k];
 		board[i][j].startingBlock = true;
 		board[i][j].startColor = sb_colors[k];
 		DrawStartingBlock(renderer, i, j, sb_colors[k]);
-		PrintSubTexture(renderer, robots, x, y, k, 0, sq_size);
+		PrintSubTexture(renderer, robots, x + 2, y + 2, k, 0, sq_size - 4);
 	}
 	
 	return 0;
@@ -329,7 +382,7 @@ int SetupNormalRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[B
 
 /*****************************SETUP RANDOM*************************************/
 
-int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square board[BOARD_SIZE][BOARD_SIZE],
+int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point positionJetons[16], Square board[BOARD_SIZE][BOARD_SIZE],
 			bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1], bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1]) {
 	
 	/*******************Initialisation********************/
@@ -371,17 +424,16 @@ int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square
 
 	for (int k=0; k<4; k++) {
 		for (int l=0; l<4; l++) {
-			int i = RandomUnion(1, milieu - 2, milieu + 1, BOARD_SIZE - 2);
-			int j = RandomUnion(1, milieu - 2, milieu + 1, BOARD_SIZE - 2);
+			int i, j;
+			RandomPositionPasCentre(&i, &j);
 			int max = 0;
 			while (board[i][j].finishSquare || max > 10000) { 
 				//No two symbols on same square
-				i = RandomUnion(1, milieu - 2, milieu + 1, BOARD_SIZE - 2);
-				j = RandomUnion(1, milieu - 2, milieu + 1, BOARD_SIZE - 2);
+				RandomPositionPasCentre(&i, &j);
 				max++;
 			}
-			if (max > 5000) return -42;
-
+			if (max > 9998) return -42;
+			positionJetons[4*k + l] = (Point) {i, j};
 			board[i][j].finishSquare = true;
 			board[i][j].finishElement = k;
 			board[i][j].finishColor = l;
@@ -395,7 +447,7 @@ int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square
 
 			int x = x_offset + i*sq_size;
 			int y = y_offset + j*sq_size;
-			PrintSubTexture(renderer, jetons, x, y, l, k, sq_size);
+			PrintSubTexture(renderer, jetons, x + 2, y + 2, l, k, sq_size - 4);
 		}
 	}
 		
@@ -417,7 +469,7 @@ int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Square
 }
 
 
-int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[BOARD_SIZE][BOARD_SIZE]) {
+int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[BOARD_SIZE][BOARD_SIZE], Sommet* actuel) {
 	SDL_Color sb_colors[] = {sb_blue, sb_red, sb_green, sb_yellow};
 	//INITIALISATION
 	for (int i=0; i<BOARD_SIZE; i++) {
@@ -428,22 +480,22 @@ int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[B
 
 
 	for (int k=0; k<4; k++) {
-		int i = RandomUnion(0, milieu - 2, milieu + 1, BOARD_SIZE - 1);
-		int j = RandomUnion(0, milieu - 2, milieu + 1, BOARD_SIZE - 1);
-		int max = 0;
+		int i, j;
+		RandomPositionPasCentre(&i, &j);
 
+		int max = 0;
 		while (board[i][j].finishSquare || board[i][j].startingBlock || max > 10000) {
 			//No starting block on finish block or on other starting block
-			i = RandomUnion(0, milieu - 2, milieu + 1, BOARD_SIZE - 1);
-			j = RandomUnion(0, milieu - 2, milieu + 1, BOARD_SIZE - 1);
+			RandomPositionPasCentre(&i, &j);
 			max++;
 		}
+		actuel->positions[k] = (Point){i, j};
 		if (max > 10000) return -42;
 		board[i][j].startingBlock = true;
 		board[i][j].startColor = sb_colors[k];
 		int x = x_offset + i*sq_size;
 		int y = y_offset + j*sq_size;
 		DrawStartingBlock(renderer, i, j, sb_colors[k]);
-		PrintSubTexture(renderer, robots, x, y, k, 0, sq_size);
+		PrintSubTexture(renderer, robots, x + 2, y + 2, k, 0, sq_size - 4);
 	}
 }

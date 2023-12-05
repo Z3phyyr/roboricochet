@@ -13,12 +13,15 @@
 #include "errorManager.h"
 #include "boardManager.h"
 #include "textureManager.h"
+#include "interface.h"
 
 /*********************TODO****************************/
 /*
-	- Changer SList en SDynTab
 	- Réfléchir à une heuristique sur les autres robots (i.e. limiter leurs déplacements)
-	- Passer sur la version hexagonale (rip)
+	
+	- Varier le nombre de robots et voir si il existe des chemins plus courts 
+		(Heuristique ABSOLUMENT Necessaire dans ce cas)
+	- Varier le nombre de murs
 */
 /*****************************************************/
 
@@ -28,6 +31,8 @@
 const int window_w = 1200;
 const int window_h = 800;
 
+const SDL_Color outline_bouton = {155, 155, 155, 255};
+const SDL_Color couleur_bouton = {50, 50, 50, 255};
 
 
 
@@ -58,19 +63,17 @@ int main (int argc, char** argv) {
 		strcpy(init_str, "y");
 	}
 
-	g.jetons = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/jetons.bmp", 1, 100, 100);
-	g.robots = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/robots.bmp", 1, 100, 100);
+	g.jetons = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/images/jetons.bmp", 1, 100, 100);
+	g.robots = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/images/robots.bmp", 1, 100, 100);
 
 
 	g.actuel = (Sommet) {{{1, 2}, {0, 0}, {7, 4}, {12, 5}}, 0};
 	Zipper z = {NULL, NULL};
 
+	g.startButton = (Button) {(SDL_Rect) {900, 450, 50, 20}, outline_bouton, couleur_bouton};
 
 	/******************************************/
 	throwwithCondition(InitializeRoboRicochet(&g, "yousk2") < 0, "Error during Game Initialisation", &g);
-	
-	
-
 	
 	
 	while (is_running) {
@@ -80,6 +83,32 @@ int main (int argc, char** argv) {
 				case SDL_QUIT:
 					is_running = false;
 					break;
+
+				case SDL_MOUSEBUTTONDOWN:
+					if (CheckBoutonPresse(&g.startButton, e.motion.x, e.motion.y)) {
+						if (cheminpresent) {
+							FreeZipper(z);
+
+						}
+						int Choix = RandomInt(0, 15);
+						Element e = Choix / 4;
+						Couleur c = Choix % 4;
+						SetColor(g.renderer, black);
+						static const SDL_Rect centre = {x_offset + (milieu-1)*sq_size, y_offset + (milieu-1)*sq_size, 2*sq_size, 2*sq_size};
+						throwwithCondition(SDL_RenderFillRect(g.renderer, &centre) || 
+										   PrintSubTexture(g.renderer, g.jetons, x_offset + (BOARD_SIZE/2.0 - 0.5)*sq_size, 
+										   y_offset + (BOARD_SIZE/2.0 - 0.5)*sq_size, c, e, sq_size) < 0, 
+										   "Central Token display triggered an exception", &g);
+						SDL_RenderPresent(g.renderer);
+
+						printf("Lancement de DIJKSTRA\n");
+						z = Dijkstra(g.actuel, g.positionsJetons[Choix], c, g.horizontalWalls, g.verticalWalls);
+						AffichageTexteInformatif(g.renderer, z.distance_totale);
+						cheminpresent = true;	
+						g.actuel.dist = 0;
+					}
+					break;
+				
 				case SDL_KEYDOWN: 
 					switch (e.key.keysym.sym) {
 						case SDLK_ESCAPE:
@@ -87,27 +116,24 @@ int main (int argc, char** argv) {
 							break;
 						case SDLK_d:
 							throwwithCondition(InitializeRoboRicochet(&g, "z") < 0, "Error during initialisation", &g);
+							g.actuel.dist = 0;
+							break;
 						case SDLK_r:
 							throwwithCondition(InitializeRoboRicochet(&g, "r") < 0, "Error during initialisation", &g);
+							g.actuel.dist = 0;
 							break;
-						case SDLK_c:
-							FreeZipper(z);
-							printf("Lancement de DIJKSTRA\n");
-							z = Dijkstra(g.actuel, (Point){9, 3}, BLUE, g.horizontalWalls, g.verticalWalls);
-							AfficherChemin(z.droite);
-							cheminpresent = true;
-							printf("");
-							break;
-
+						
 
 						case SDLK_LEFT:
 							if (cheminpresent) {
-								throwwithCondition(DeplaceGauche(g.renderer, g.robots, &g.actuel, g.board, &z) != 0, "DeplaceGauche triggered an exception", &g);
+								throwwithCondition(DeplaceGauche(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &z) != 0, "DeplaceGauche triggered an exception", &g);
+								AffichagePosition(g.renderer, g.actuel.dist, z.distance_totale);
 							}
 							break;
-						case SDLK_RIGHT:
+						case SDLK_RIGHT: 
 							if (cheminpresent) {
-								throwwithCondition(DeplaceDroite(g.renderer, g.robots, &g.actuel, g.board, &z) != 0, "DeplaceDroite triggered an exception", &g);
+								throwwithCondition(DeplaceDroite(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &z) != 0, "DeplaceDroite triggered an exception", &g);
+								AffichagePosition(g.renderer, g.actuel.dist, z.distance_totale);
 							}
 							
 							break;
@@ -115,6 +141,11 @@ int main (int argc, char** argv) {
 
 						case SDLK_f:
 							FreeZipper(z);
+							cheminpresent = false;
+							
+							SDL_SetRenderDrawColor(g.renderer, 255, 255, 255, 255);
+							SDL_Rect rect = {900, 0, 300, window_h};
+							SDL_RenderDrawRect(g.renderer,  &rect);
 							break;
 
 						default:break;

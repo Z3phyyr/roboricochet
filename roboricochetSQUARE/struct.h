@@ -9,6 +9,7 @@
 
 #define N_Robots 4
 
+
 /****************************BOARD****************************/
 
 typedef struct c {
@@ -20,7 +21,7 @@ typedef enum element {
 	NONE = -1,
 	STAR,
 	PLANET,
-	TRIANGLE, //TODO
+	TRIANGLE, 
 	MOON
 } Element;
 
@@ -67,6 +68,7 @@ typedef struct CheminList {
 typedef struct zipper {
 	Chemin* gauche;
 	Chemin* droite;
+	int distance_totale;
 } Zipper;
 
 /****************************HACHAGEDIST*************************/

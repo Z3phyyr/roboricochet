@@ -18,7 +18,6 @@ SList* ExtraireSList(SList* l, Sommet* dest);
 void FreeSList(SList* l);
 SList* DescendantsDirects (Sommet a, bool horizontalWalls[BOARD_SIZE][BOARD_SIZE+1], bool verticalWalls[BOARD_SIZE][BOARD_SIZE+1]);
 Chemin* AjouterChemin(Chemin* c, Sommet a);
-void AfficherChemin(Chemin* c);
 void FreeChemin (Chemin* c);
 
 void FreeZipper(Zipper z);
