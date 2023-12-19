@@ -6,6 +6,10 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <time.h>
+#include <string.h>
 
 #define N_Robots 4
 
@@ -34,14 +38,14 @@ typedef enum couleur {
 	GREEN 
 } Couleur;
 
-typedef struct sq {
+typedef struct HexBox {
 	bool startingBlock;
 	SDL_Color startColor;
 
-	bool finishSquare;
-	Element finishElement;
-	Couleur finishColor;
-} Square;
+	bool finishHex;
+	Element e;
+	Couleur c;
+} Hex;
 
 /******************************GRAPHE*************************/
 
