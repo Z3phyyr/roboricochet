@@ -1,0 +1,63 @@
+J'ai besoin :
+  o Struct :
+    - grille hex 
+    - murs 
+    - coordonées
+    - robots ()
+    - items
+  o Affichage
+
+// Cordonnées axiales (q,r) telles que cela corresponde à des coordonnées de matrice
+
+boardManager : zephyr
+    // BOARD_SIZE = taille du tableau
+    bool DiagonalHautWalls[BOARD_SIZE+1][BOARD_SIZE+1];  // (q,_,_) 
+    bool HorinzontalWalls[BOARD_SIZE+1][BOARD_SIZE+1];  // (_,_,s) -> s=-q-r
+    bool DiagonalBasHWalls[BOARD_SIZE+1][BOARD_SIZE+1]; // (_,r,_) -> il faut faire +1 à r
+
+
+errorManager : rien
+
+graphe : Modif
+    Modifié :
+        - PasDeRobot
+        - EgaliteSommet
+        - AfficherSList
+        - DescendantsDirects
+        - Dijkstra
+    struct :
+        - Point
+        - horizontalWalls/verticalWalls
+    fonctions : r
+    à modifier :
+        - DeplacementNord/Sud/...
+
+
+hachage : Modif
+    struct :
+        - Clist ? OK
+        - Sommet ? Ok
+    à modifier :
+        - Hachage Fait
+
+hachagedist : Ok - Rien
+    struct :
+        - Sommet ? Ok
+        - SList ? Ok
+ -> utilisation de Point
+    fonctions :
+        - EgaliteSommet ? Ok
+        - CopieSommet ? Ok
+        - Hachage ? Ok
+
+main : zephyr
+
+minstack : rien
+
+struct : Modif
+    à modifier :
+        - Point -> Fait
+
+interface : rien
+
+textureManager : rien
