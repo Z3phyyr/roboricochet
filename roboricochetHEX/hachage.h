@@ -4,7 +4,7 @@
 #include "struct.h"
 #include "boardManager.h"
 
-void FreeCList(CList* l)
+void FreeCList(CList* l);
 
 int Hachage (const int w, Sommet s);
 

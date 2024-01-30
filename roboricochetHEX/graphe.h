@@ -11,6 +11,7 @@ void CopieSommet(Sommet a, Sommet* b);
 bool EgaliteSommet(Sommet a, Sommet b);
 
 void AfficherSList(SList* c);
+void AfficherChemin(Chemin* c);
 SList* InsererSList(Sommet a, SList* l);
 SList* ExtraireSList(SList* l, Sommet* dest);
 void FreeSList(SList* l);
@@ -18,17 +19,16 @@ void FreeSList(SList* l);
 Chemin* AjouterChemin(Chemin* c, Sommet a);
 void FreeChemin (Chemin* c);
 
-void FreeZipper(Zipper z);
+void FreeZipper(Zipper* z);
 
-SList* DescendantsDirects (Sommet a, 
-			bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-			bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-			bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]);
+SList* DescendantsDirects (Sommet a, bool horizontalWalls[BOARD_SIZE+1][BOARD_SIZE+1], 
+									 bool diagonalHautWalls[BOARD_SIZE + 1][BOARD_SIZE+1],
+									 bool diagonalBasWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]);
 
 Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
-			bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-			bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-			bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]);
+				 bool horizontalWalls[BOARD_SIZE+1][BOARD_SIZE+1], 
+				 bool diagonalHautWalls[BOARD_SIZE + 1][BOARD_SIZE+1],
+				 bool diagonalBasWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]);
 
 
 #endif //__GRAPHE__

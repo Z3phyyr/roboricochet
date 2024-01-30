@@ -7,8 +7,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "graphe.h"
+#include "struct.h"
 #include "textureManager.h"
 #include "boardManager.h"
+#include "interface.h"
 
 // typedef struct TextureList {
 // 	dimTexture* elem;

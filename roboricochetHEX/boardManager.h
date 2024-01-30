@@ -12,13 +12,10 @@
 #include <stdlib.h>
 #include "textureManager.h"
 #include "struct.h"
+#include "interface.h"
+#include "graphe.h"
 
-#define HEXSIZE 13
 
-#define BOARD_RADIUS 9
-#define BOARD_SIZE 19 //BOARD_SIZE = 2*BOARD_RADIUS + 1
-
-#define N_Robots 4
 
 typedef enum Walltype {
 	VERTICAL,
@@ -27,37 +24,33 @@ typedef enum Walltype {
 } WallType;
 
 
-typedef struct GS {
-	SDL_Window* window;
-	SDL_Renderer* renderer;
-	dimTexture* jetons;
-	dimTexture* robots;
-
-	Hex board[BOARD_SIZE][BOARD_SIZE];
-	bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1];
-	bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1];
-	bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1];
-	Point positionJetons[16];
-} GameStruct;
+void SetColor(SDL_Renderer *renderer, SDL_Color color);
 
 void GetTopCoordinates(int q, int r, int* x, int* y);
+void GetPrintingCoordinates(int q, int r, int* x, int* y);
 
+int FillCenterHexagon(SDL_Renderer* renderer); 
 int DrawVerticalWall(SDL_Renderer* renderer, int q_left, int r);
 int DrawDiagUpWall(SDL_Renderer* renderer, int q, int r_bot);
 int DrawDiagDownWall(SDL_Renderer* renderer, int q_bot, int r_bot);
+int DrawJeton(SDL_Renderer* renderer, dimTexture* jetons, const int numero, Point position);
+
+int DeplaceDroite(SDL_Renderer *renderer, dimTexture *robots, dimTexture *jetons, Sommet *actuel, Hex board[BOARD_SIZE][BOARD_SIZE], Zipper *z);
+int DeplaceGauche(SDL_Renderer* renderer, dimTexture* robots, dimTexture* jetons, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE], Zipper* z);
 
 int SetupEmptyBoard(SDL_Renderer *renderer);
 int SetupNormalJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex board[BOARD_SIZE][BOARD_SIZE], Point positionJetons[16],
 		bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]);
+int SetupNormalRobots(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE]);
 
 int SetupRandomJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, 
 		Hex board[BOARD_SIZE][BOARD_SIZE], Point positionsJetons[16],
 		bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]);
-int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Hex board[BOARD_SIZE][BOARD_SIZE]);
+int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE]);
 
 
 int InitializeRoboRicochet(GameStruct* g, char* id);

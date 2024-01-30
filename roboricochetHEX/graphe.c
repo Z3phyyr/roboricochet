@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 //Modulo pour table de hachage
-const long unsigned mersenne = 131071;
+const long unsigned mersenne = 524287;
 
 bool PasDeRobot(int q, int r, Sommet a, Couleur actuel) {
 	for (int k=0; k<N_Robots; k++) {
@@ -86,11 +86,30 @@ void AfficherSList(SList* c) {
 	if (c == NULL) {
 		return;
 	}
+	int q, r, s;
 	for (int k=0; k<N_Robots; k++) {
-		printf("(%d, %d)  ", c->elem.positions[k].r, c->elem.positions[k].q);
+		q = c->elem.positions[k].q;
+		r = c->elem.positions[k].r;
+		s = q + r - 9;
+		printf("(%d, %d, %d) ", q, r, s);
 	}
 	printf("\n");
 	AfficherSList(c->suivant);
+}
+
+void AfficherChemin(Chemin* c) {
+	if (c == NULL) {
+		return;
+	}
+	int q, r, s;
+	for (int k=0; k<N_Robots; k++) {
+		q = c->positions[k].q;
+		r = c->positions[k].r;
+		s = q + r - 9;
+		printf("(%d, %d, %d) ", q, r, s);
+	}
+	printf("\n");
+	AfficherChemin(c->suivant);
 }
 
 void FreeChemin (Chemin* c) {
@@ -100,12 +119,15 @@ void FreeChemin (Chemin* c) {
 	FreeChemin(suivant);
 }
 
-void FreeZipper(Zipper z) {
-	FreeChemin(z.gauche);
-	FreeChemin(z.droite);
+void FreeZipper(Zipper* z) {
+	FreeChemin(z->gauche);
+	FreeChemin(z->droite);
+	z->gauche = NULL;
+	z->droite = NULL;
+	z->distance_totale = 0;
 }
-	
-Point DeplacementNordOuest (Sommet a, Couleur actuel, bool DiagupnWalls[BOARD_SIZE+1][BOARD_SIZE + 1]) {
+
+Point DeplacementGauche(Sommet a, Couleur actuel, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE + 1]) {
 	/*
 		ENTREE : coordonnées q, r, murs horizontaux
 		SORTIE : coordonnées du point vers lequel un déplacement (vers le haut) est possible
@@ -113,68 +135,47 @@ Point DeplacementNordOuest (Sommet a, Couleur actuel, bool DiagupnWalls[BOARD_SI
 	int q = a.positions[actuel].q;
 	int r = a.positions[actuel].r;
 	Point p;
-	int wallr = r;
-	while (!DiagupWalls[q][wallr] && PasDeRobot(q, wallr-1, a, actuel)) {
-		wallr--;
-	}
-	if (wallr == r) {
-		//Pas de mouvement
-		p.q = -42;
-		p.r = -42;
-		return p;
-	}
-	p.q = q;
-	p.r = wallr;
-	return p;
-}
-
-Point DeplacementSudEst (Sommet a, Couleur actuel, bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE + 1]) {
-	int q = a.positions[actuel].q;
-	int r = a.positions[actuel].r;
-	Point p;
-	int wallr = r;
-	while (!DiagupWalls[q][wallr] && PasDeRobot(q, wallr-1, a, actuel)) {
-		wallr++;
-	}
-	if (wallr == r) {
-		//Pas de mouvement
-		p.q = -42;
-		p.r = -42;
-		return p;
-	}
-	p.q = q;
-	p.r = wallr;
-	return p;
-}
-
-Point DeplacementNordEst (Sommet a, Couleur actuel, bool DiagDownWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
-	int q = a.positions[actuel].q;
-	int r = a.positions[actuel].r;
-	Point p;
 	int wallq = q;
-	int wallr = r;
-	while (!DiagDownWalls[wallq][wallr] && PasDeRobot(wallq-1, wallr-1, a, actuel)) {
-		wallr++; 
+	while (!VerticalWalls[wallq][r] && PasDeRobot(wallq-1, r, a, actuel)) {
 		wallq--;
 	}
-	if ((wallr == r) && (wallq == q)) {
+	if (wallq == q) {
 		//Pas de mouvement
 		p.q = -42;
 		p.r = -42;
 		return p;
 	}
 	p.q = wallq;
-	p.r = wallr;
+	p.r = r;
 	return p;
 }
 
-Point DeplacementSudOuest (Sommet a, Couleur actuel, bool DiagDownWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
+Point DeplacementDroite (Sommet a, Couleur actuel, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE + 1]) {
+	int q = a.positions[actuel].q;
+	int r = a.positions[actuel].r;
+	Point p;
+	int wallq = q;
+	while (!VerticalWalls[wallq+1][r] && PasDeRobot(wallq+1, r, a, actuel)) {
+		wallq++;
+	}
+	if (wallq == q) {
+		//Pas de mouvement
+		p.q = -42;
+		p.r = -42;
+		return p;
+	}
+	p.q = wallq;
+	p.r = r;
+	return p;
+}
+
+Point DeplacementNordEst (Sommet a, Couleur actuel, bool diagonalBasWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
 	int q = a.positions[actuel].q;
 	int r = a.positions[actuel].r;
 	Point p;
 	int wallq = q;
 	int wallr = r;
-	while (!DiagDownWalls[wallq][wallr] && PasDeRobot(wallq-1, wallr-1, a, actuel)) {
+	while (!diagonalBasWalls[wallq+1][wallr] && PasDeRobot(wallq+1, wallr-1, a, actuel)) {
 		wallr--; 
 		wallq++;
 	}
@@ -189,80 +190,101 @@ Point DeplacementSudOuest (Sommet a, Couleur actuel, bool DiagDownWalls[BOARD_SI
 	return p;
 }
 
-Point DeplacementEst (Sommet a, Couleur actuel, bool VerticalWalls[BOARD_SIZE + 1][BOARD_SIZE+1]) {
+Point DeplacementSudOuest (Sommet a, Couleur actuel, bool diagonalBasWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
 	int q = a.positions[actuel].q;
 	int r = a.positions[actuel].r;
 	Point p;
 	int wallq = q;
-	while (!VerticalWalls[wallq][r] && PasDeRobot(wallq-1, r, a, actuel)) {
-		wallq++;
-	}
-	if (wallq == q) {
-		//Pas de mouvement
-		p.q = -42;
-		p.r = -42;
-		return p;
-	}
-	p.q = wallq;
-	p.r = r;
-	return p;
-}
-
-Point DeplacementOuest (Sommet a, Couleur actuel, bool VerticalWalls[BOARD_SIZE + 1][BOARD_SIZE+1]) {
-	int q = a.positions[actuel].q;
-	int r = a.positions[actuel].r;
-	Point p;
-	int wallq = q;
-	while (!VerticalWalls[wallq][r] && PasDeRobot(wallq-1, r, a, actuel)) {
+	int wallr = r;
+	while (!diagonalBasWalls[wallq][wallr+1] && PasDeRobot(wallq-1, wallr+1, a, actuel)) {
+		wallr++; 
 		wallq--;
 	}
-	if (wallq == q) {
+	if ((wallr == r) && (wallq == q)) {
 		//Pas de mouvement
 		p.q = -42;
 		p.r = -42;
 		return p;
 	}
 	p.q = wallq;
-	p.r = r;
+	p.r = wallr;
 	return p;
 }
 
-SList* DescendantsDirects (Sommet a, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-					bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-					bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
+Point DeplacementSudEst (Sommet a, Couleur actuel, bool diagonalHautWalls[BOARD_SIZE + 1][BOARD_SIZE+1]) {
+	int q = a.positions[actuel].q;
+	int r = a.positions[actuel].r;
+	Point p;
+	int wallr = r;
+	while (!diagonalHautWalls[q][wallr+1] && PasDeRobot(q, wallr+1, a, actuel)) {
+		wallr++;
+	}
+	if (wallr == r) {
+		//Pas de mouvement
+		p.q = -42;
+		p.r = -42;
+		return p;
+	}
+	p.q = q;
+	p.r = wallr;
+	return p;
+}
+
+Point DeplacementNordOuest (Sommet a, Couleur actuel, bool diagonalHautWalls[BOARD_SIZE + 1][BOARD_SIZE+1]) {
+	int q = a.positions[actuel].q;
+	int r = a.positions[actuel].r;
+	Point p;
+	int wallr = r;
+	while (!diagonalHautWalls[q][wallr] && PasDeRobot(q, wallr-1, a, actuel)) {
+		wallr--;
+	}
+	if (wallr == r) {
+		//Pas de mouvement
+		p.q = -42;
+		p.r = -42;
+		return p;
+	}
+	p.q = q;
+	p.r = wallr;
+	return p;
+}
+
+SList* DescendantsDirects (Sommet a, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1], 
+									 bool diagonalHautWalls[BOARD_SIZE + 1][BOARD_SIZE+1],
+									 bool diagonalBasWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
 	//Recupere les descendants directs d'un sommet a
 	
 	SList* l = NULL;
 	for (int k=0; k<N_Robots; k++) {
-		for (int d=0; d<4; d++) {
-			//OUEST 0 ; NORD-OUEST 1 ; NORD-EST 2 ; EST 3 ; SUD-EST 4 ; SUD-OUEST 5
+		for (int d=0; d<6; d++) {
+			//Gauche 0 ; Haut-Gauche 1 ; Haut-Droite 2 ; Droite 3 ; Bas-Droite 4 ; Bas-Gauche 5
 			Sommet b;
 			CopieSommet(a, &b);
 			Point p = {0, 0};
 			switch (d) {
 				case 0:
 					// r negatif
-					p = DeplacementOuest(a, k, VerticalWalls);
+					p = DeplacementGauche(a, k, VerticalWalls);
 					break;
 				case 1:
 					// q négatif et r positif
-					p = DeplacementNordOuest(a, k, DiagupWalls);
+					p = DeplacementNordOuest(a, k, diagonalHautWalls);
 					break;
 				case 2:
 					// q positif
-					p = DeplacementNordEst(a, k, DiagDownWalls);
+					p = DeplacementNordEst(a, k, diagonalBasWalls);
 					break;
 				case 3:
 					// r positif
-					p = DeplacementEst(a, k, VerticalWalls);
+					p = DeplacementDroite(a, k, VerticalWalls);
 					break;
 				case 4:
 					// q positif et r négatif
-					p = DeplacementSudEst(a, k, DiagupWalls);
+					p = DeplacementSudEst(a, k, diagonalHautWalls);
 					break;
 				case 5:
 					// q négatif
-					p = DeplacementSudOuest(a, k, DiagDownWalls);
+					p = DeplacementSudOuest(a, k, diagonalBasWalls);
 					break;
 			}
 			if (p.r != -42) {
@@ -276,9 +298,9 @@ SList* DescendantsDirects (Sommet a, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE
 }
 
 Zipper Dijkstra(Sommet s, Point t, Couleur couleur, 
-					bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-					bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-					bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
+				 bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1], 
+				 bool DiagupWalls[BOARD_SIZE + 1][BOARD_SIZE+1],
+				 bool DiagDownWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
 	/*
 		ENTREE : sommets s et t, tableaux pour obtenir les descendants
 		SORTIE : chemin le plus court de s à t
@@ -297,15 +319,18 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	Sommet v;
 	Sommet w;
 	SList* descendants = NULL;
+	
+	
 	while (file.remplissage != 0) {
 		ExtraireMinStack(&file, &v);
-		if (tours % 1000 == 0) printf("(%d, %d) ; dist : %d ; tours : %d\n", v.positions[couleur]q, v.positions[couleur].r, v.dist, tours);
+		if (tours % 100000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
 				
 		if (v.positions[couleur].q == t.q && v.positions[couleur].r == t.r) {
+			printf("Nombre total de tours : %d\n", tours);
 			CopieSommet(v, &final);
 			FreeSMinStack(&file);
 		} else {
-			descendants = DescendantsDirects(v, horizontalWalls, diagonalHautWalls, diagonalBasWalls);
+			descendants = DescendantsDirects(v, VerticalWalls, DiagupWalls, DiagDownWalls);
 			while (descendants != NULL) {
 				descendants = ExtraireSList(descendants, &w);
 				int newdist = RecupererDist(&d, w);
@@ -322,10 +347,9 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 		tours++;
 	}
 	FreeHashDist(&d);
-	for (int k=0; k<N_Robots; k++) {
-		printf("(%d, %d)  ", final.positions[k].i, final.positions[k].j);
-	}
-	printf("\nDistance finale = %d\n", final.dist);
+	
+	printf("Distance finale = %d\n", final.dist);
+	printf("Taille finale des tables de hachage : w = %lu; size = %lu\n\n", h.w, h.size);
 	//t non accessible (ne devrait pas arriver en pratique)
 	if (final.dist == -1) return (Zipper) {NULL, NULL, 0};
 	

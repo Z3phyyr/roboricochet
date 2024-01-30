@@ -1,11 +1,8 @@
 #include "boardManager.h"
+#include <assert.h>
 #include <string.h>
 
 
-
-#define WALLNUMBER 40
-
-const Hex board[BOARD_SIZE][BOARD_SIZE];
 
 const SDL_Color white = {255, 255, 255, 255};
 const SDL_Color black = {0, 0, 0, 255};
@@ -76,32 +73,28 @@ bool alreadyAWallThere(bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 }
 
 void GetTopCoordinates(int q, int r, int* x, int* y) {
-	const int hexSemiHeight = HEXSIZE * SDL_sqrt(3);
-	*x = (2*q + r- BOARD_RADIUS + 1)*hexSemiHeight + x_offset;
+	*x = (2*q + r- BOARD_RADIUS + 1)*HEXSEMIHEIGHT + x_offset;
 	*y = 3*r*HEXSIZE + y_offset;
 }
 
 void GetPrintingCoordinates(int q, int r, int* x, int* y) {
-	const int hexSemiHeight = HEXSIZE * SDL_sqrt(3);
-	*x = (2*q + r- BOARD_RADIUS)*hexSemiHeight + x_offset + HEXSIZE/2;
-	*y = 3*r*HEXSIZE + y_offset + hexSemiHeight/2;
+	*x = (2*q + r- BOARD_RADIUS)*HEXSEMIHEIGHT + x_offset + HEXSIZE/2;
+	*y = 3*r*HEXSIZE + y_offset + HEXSEMIHEIGHT/2;
 }
 
 int DrawVerticalWall(SDL_Renderer* renderer, int q_right, int r) {
-	const int hexSemiHeight = HEXSIZE*SDL_sqrt(3);
 	SetColor(renderer, black);
-	SDL_Rect rect = {x_offset + (2*(q_right) + r - BOARD_RADIUS)*hexSemiHeight - 1, y_offset + (3*r + 1)*HEXSIZE, 3, 2*HEXSIZE + 1};
+	SDL_Rect rect = {x_offset + (2*(q_right) + r - BOARD_RADIUS)*HEXSEMIHEIGHT - 1, y_offset + (3*r + 1)*HEXSIZE, 3, 2*HEXSIZE + 1};
 	return SDL_RenderFillRect(renderer, &rect);
 }
 
 int DrawDiagUpWall(SDL_Renderer* renderer, int q, int r_bot) {
-	const int hexSemiHeight = HEXSIZE*SDL_sqrt(3);
-
 	
-	int x_down = (2*q + r_bot-BOARD_RADIUS)*hexSemiHeight + x_offset;
+	
+	int x_down = (2*q + r_bot-BOARD_RADIUS)*HEXSEMIHEIGHT + x_offset;
 	int y_down = (3*r_bot + 1)*HEXSIZE + y_offset;
 
-	int x_up = x_down + hexSemiHeight;
+	int x_up = x_down + HEXSEMIHEIGHT;
 	int y_up = y_down - HEXSIZE;
 	SetColor(renderer, black);
 
@@ -115,12 +108,10 @@ int DrawDiagUpWall(SDL_Renderer* renderer, int q, int r_bot) {
 }
 
 int DrawDiagDownWall(SDL_Renderer* renderer, int q_top, int r_bot) {
-	const int hexSemiHeight = HEXSIZE*SDL_sqrt(3);
-
 	int x_up, y_up; 
 	GetTopCoordinates(q_top-1, r_bot, &x_up, &y_up);
 
-	int x_down = x_up + hexSemiHeight;
+	int x_down = x_up + HEXSEMIHEIGHT;
 	int y_down = y_up + HEXSIZE;
 	SetColor(renderer, black);
 
@@ -144,14 +135,14 @@ int DrawWall(SDL_Renderer* renderer, int q, int r, WallType wt) {
 	}
 }
 
-int DrawHexagonFromTop (SDL_Renderer* renderer, const int top_x, const int top_y, const int hexSemiHeight) {
+int DrawHexagonFromTop (SDL_Renderer* renderer, const int top_x, const int top_y, const int hexSemiHeight, const int hexSize) {
 	SDL_Point points[7] = {
 		{top_x, top_y}, 
-		{top_x + hexSemiHeight, top_y + HEXSIZE}, 
-		{top_x + hexSemiHeight, top_y + 3*HEXSIZE},
-		{top_x, top_y + 4*HEXSIZE},
-		{top_x - hexSemiHeight, top_y + 3*HEXSIZE},
-		{top_x - hexSemiHeight, top_y + HEXSIZE},
+		{top_x + hexSemiHeight, top_y + hexSize}, 
+		{top_x + hexSemiHeight, top_y + 3*hexSize},
+		{top_x, top_y + 4*hexSize},
+		{top_x - hexSemiHeight, top_y + 3*hexSize},
+		{top_x - hexSemiHeight, top_y + hexSize},
 		{top_x, top_y}};
 
 	
@@ -186,6 +177,13 @@ int FillHexagonFromTop (SDL_Renderer* renderer, int top_x, int top_y, const int 
 	if (check3) return -1;
 
 	return 0;
+}
+
+
+int FillCenterHexagon(SDL_Renderer* renderer) {
+	int top_x, top_y;
+	GetTopCoordinates(BOARD_RADIUS, BOARD_RADIUS, &top_x, &top_y);
+	return FillHexagonFromTop(renderer, top_x, top_y, HEXSEMIHEIGHT, HEXSIZE);
 }
 
 int DrawOutsideWalls(SDL_Renderer* renderer, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
@@ -242,28 +240,41 @@ int DrawOutsideWalls(SDL_Renderer* renderer, bool VerticalWalls[BOARD_SIZE+1][BO
 		if (DrawVerticalWall(renderer, q, r) != 0) return -1;
 		VerticalWalls[q][r] = true;
 	}
+	return 0;
 }
 
-int DrawCenter(SDL_Renderer* renderer, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-		bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
-		bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
-	const int hexSemiHeight = HEXSIZE * SDL_sqrt(3);
-
+int DrawCenter(SDL_Renderer* renderer) {
 	int x, y;
 	int dq_centre[7] = {-1,-1, 0, 0, 0, 1, 1};
 	int dr_centre[7] = {0, 1, 1, 0, -1, -1, 0};
 	for(int l=0; l<7; l++) {
 		GetTopCoordinates(BOARD_RADIUS + dq_centre[l], BOARD_RADIUS + dr_centre[l], &x, &y);
-		FillHexagonFromTop(renderer, x, y, hexSemiHeight, HEXSIZE);
+		FillHexagonFromTop(renderer, x, y, HEXSEMIHEIGHT, HEXSIZE);
 	}
+	return 0;
+}
 
+int DrawJeton(SDL_Renderer* renderer, dimTexture* jetons, const int numero, Point position) {
+	int x, y;
+	GetPrintingCoordinates(position.q, position.r, &x, &y);
+	if (PrintSubTexture(renderer, jetons, x, y, numero%4, numero/4, printing_size) != 0) return -1;
+	
+	return 0;
+}
 
+int DrawStartingBlock(SDL_Renderer* renderer, int q, int r, SDL_Color color) {
+	SetColor(renderer, color);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+	int x, y;
+	GetTopCoordinates(q, r, &x, &y);
+	if (FillHexagonFromTop(renderer, x, y+4, (HEXSIZE - 2)*SDL_sqrt(3), HEXSIZE - 2) != 0) return -1;
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+	return 0;
 }
 
 /**************************************************************************/
 
 int SetupEmptyBoard(SDL_Renderer* renderer) {
-	const int hexSemiHeight = HEXSIZE * SDL_sqrt(3);
 	SetColor(renderer, white);
 	SDL_RenderClear(renderer);
 	
@@ -271,23 +282,23 @@ int SetupEmptyBoard(SDL_Renderer* renderer) {
 	int max = BOARD_RADIUS + 1;
 
 	int top_y = y_offset;
-	int Top_left_x = x_offset + (BOARD_RADIUS + 1)*hexSemiHeight;
+	int Top_left_x = x_offset + (BOARD_RADIUS + 1)*HEXSEMIHEIGHT;
 
 	for (int i=0; i<=2*BOARD_RADIUS; i++) {
 		int top_x = Top_left_x;
 		for (int j=0; j<max; j++) {
 			SetColor(renderer, beige);
-			if (FillHexagonFromTop(renderer, top_x, top_y,  hexSemiHeight, HEXSIZE) != 0) return -1;
+			if (FillHexagonFromTop(renderer, top_x, top_y,  HEXSEMIHEIGHT, HEXSIZE) != 0) return -1;
 			SetColor(renderer, darkGrey);
-			if (DrawHexagonFromTop(renderer, top_x, top_y, hexSemiHeight) != 0) return -1;
-			top_x = top_x + 2*hexSemiHeight;
+			if (DrawHexagonFromTop(renderer, top_x, top_y, HEXSEMIHEIGHT, HEXSIZE) != 0) return -1;
+			top_x = top_x + 2*HEXSEMIHEIGHT;
 		}
 
 		if(i < BOARD_RADIUS) {
-			Top_left_x = Top_left_x - hexSemiHeight;
+			Top_left_x = Top_left_x - HEXSEMIHEIGHT;
 			max = max + 1;
 		} else {
-			Top_left_x = Top_left_x + hexSemiHeight;
+			Top_left_x = Top_left_x + HEXSEMIHEIGHT;
 			max = max - 1;
 		}
 		top_y = top_y + 3*HEXSIZE;
@@ -295,7 +306,8 @@ int SetupEmptyBoard(SDL_Renderer* renderer) {
 	return 0;
 }
 
-int CheckeMurs(SDL_Renderer* renderer, bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
+int CheckePosition(SDL_Renderer* renderer, Sommet actuel, dimTexture* robots,
+		bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
 	for(int q=0; q<=BOARD_SIZE; q++) {
@@ -305,6 +317,135 @@ int CheckeMurs(SDL_Renderer* renderer, bool VerticalWalls[BOARD_SIZE+1][BOARD_SI
 			if (DiagDownWalls[q][r]) DrawDiagDownWall(renderer, q, r);
 		}
 	}
+	int x, y;
+	for(int i=0; i<N_Robots; i++) {
+		GetPrintingCoordinates(actuel.positions[i].q, actuel.positions[i].r, &x, &y);
+		if (PrintSubTexture(renderer, robots, x, y, i, 0, printing_size) != 0) return -1;		
+	}
+	return 0;
+}
+
+
+int DeplaceGauche(SDL_Renderer* renderer, dimTexture* robots, dimTexture* jetons, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE], Zipper* z) {
+
+	if (z->gauche == NULL) {
+		return 0;
+	}
+
+	//Copie de actuel en tête de droite
+		Chemin* new = malloc(sizeof(Chemin));
+		assert(new != NULL);
+		for (int k=0; k<N_Robots; k++) {
+			new->positions[k] = actuel->positions[k];
+		}
+		new->suivant = z->droite;
+		z->droite = new;
+	
+
+	for (int k=0; k<N_Robots; k++) {
+		Point p = z->gauche->positions[k];
+		if (actuel->positions[k].q != p.q || actuel->positions[k].r != p.r) {
+			int x, y;
+			GetPrintingCoordinates(p.q, p.r, &x, &y);
+			Hex old_hex = board[actuel->positions[k].q][actuel->positions[k].r];
+			int x_actuel, y_actuel;
+			GetTopCoordinates(actuel->positions[k].q, actuel->positions[k].r, &x_actuel, &y_actuel);
+			
+			//Affiche le robot sur la nouvelle case
+			if (PrintSubTexture(renderer, robots, x, y, k, 0, printing_size) != 0) return -1;		
+		
+
+			//Efface la case précédente
+			SetColor(renderer, beige);
+			if (FillHexagonFromTop(renderer, x_actuel, y_actuel+4, (HEXSIZE - 2)*SDL_sqrt(3), HEXSIZE - 2) != 0) return -1;
+
+			//Affiche si besoin le jeton ou la case de départ sur l'ancienne case
+			GetPrintingCoordinates(actuel->positions[k].q, actuel->positions[k].r, &x_actuel, &y_actuel);
+			if (old_hex.startingBlock) {
+				if (DrawStartingBlock(renderer, actuel->positions[k].q, actuel->positions[k].r, old_hex.startColor) != 0) {
+					return -1;
+				}
+			}
+			if (old_hex.finishHex) {
+				if(PrintSubTexture(renderer, jetons, x_actuel, y_actuel, 
+								old_hex.finishColor, old_hex.finishElement, 
+								printing_size) != 0) {
+					return -1;
+				}
+			}
+
+			//Copie de la tête du chemin de gauche dans actuel
+			(*actuel).positions[k] = p;
+			actuel->dist--;
+		}		
+	}
+	//Suppression de la tête du chemin de gauche 
+		Chemin* suivantGauche = z->gauche->suivant;
+		free(z->gauche);
+		z->gauche = suivantGauche;
+
+	return 0;
+}
+
+int DeplaceDroite(SDL_Renderer *renderer, dimTexture *robots, dimTexture *jetons, Sommet *actuel, Hex board[BOARD_SIZE][BOARD_SIZE], Zipper *z) {
+
+	if (z->droite == NULL) {
+		return 0;
+	}
+
+	//Copie de actuel en tête de gauche
+		Chemin* new = malloc(sizeof(Chemin));
+		assert(new != NULL);
+		for (int k=0; k<N_Robots; k++) {
+			new->positions[k] = actuel->positions[k];
+		}
+		new->suivant = z->gauche;
+		z->gauche = new;
+	
+
+	for (int k=0; k<N_Robots; k++) {
+		Point p = z->droite->positions[k];
+		if (actuel->positions[k].q != p.q || actuel->positions[k].r != p.r) {
+			int x, y;
+			GetPrintingCoordinates(p.q, p.r, &x, &y);
+			Hex old_hex = board[actuel->positions[k].q][actuel->positions[k].r];
+			int x_actuel, y_actuel;
+			GetTopCoordinates(actuel->positions[k].q, actuel->positions[k].r, &x_actuel, &y_actuel);
+
+			//Affiche le robot sur la nouvelle case
+			if (PrintSubTexture(renderer, robots, x, y, k, 0, printing_size) != 0) return -1;
+
+			//Efface la case précédente
+			SetColor(renderer, beige);
+			if (FillHexagonFromTop(renderer, x_actuel, y_actuel+4, (HEXSIZE - 2)*SDL_sqrt(3), HEXSIZE - 2) != 0) return -1;
+
+			//Affiche si besoin le jeton ou la case de départ sur l'ancienne case
+			GetPrintingCoordinates(actuel->positions[k].q, actuel->positions[k].r, &x_actuel, &y_actuel);
+			if (old_hex.startingBlock) {
+				if (DrawStartingBlock(renderer, actuel->positions[k].q, 
+						actuel->positions[k].r, old_hex.startColor) != 0) {
+					return -1;
+				}
+			}
+			if (old_hex.finishHex) {
+				if(PrintSubTexture(renderer, jetons, x_actuel, y_actuel, 
+								old_hex.finishColor, old_hex.finishElement, 
+								printing_size) != 0) {
+					return -1;
+				}
+			}
+
+			//Copie de la tête du chemin de droite dans actuel
+			(*actuel).positions[k] = p;
+			actuel->dist++;
+		}		
+	}
+	//Suppression de la tête du chemin de droite 
+		Chemin* suivantDroite = z->droite->suivant;
+		free(z->droite);
+		z->droite = suivantDroite;
+
+	return 0;	
 }
 
 
@@ -312,18 +453,24 @@ int CheckeMurs(SDL_Renderer* renderer, bool VerticalWalls[BOARD_SIZE+1][BOARD_SI
 
 int InitializeRoboRicochet(GameStruct* g, char* id) {
 	
+	
+
 	if (SetupEmptyBoard(g->renderer) != 0) {
 		return -1;
 	}
+	
 	if(!strcmp(id, "r")) {
 		if (SetupRandomJetonsAndWalls(g->renderer, g->jetons, g->board, g->positionJetons, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls) != 0 ||
-		SetupRandomRobots(g->renderer, g->robots, g->board) != 0) return -1;
-	} else if (!strcmp(id, "d")) {
-		CheckeMurs(g->renderer, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+		SetupRandomRobots(g->renderer, g->robots, &g->actuel, g->board) != 0) return -1;
+		FreeZipper(&g->z);
+	} else if (!strcmp(id, "w")) {
+		CheckePosition(g->renderer, g->actuel, g->robots, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
 	} else {
 		SetupNormalJetonsAndWalls(g->renderer, g->jetons, g->board, g->positionJetons, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+		SetupNormalRobots(g->renderer, g->robots, &g->actuel, g->board);
+		FreeZipper(&g->z);
 	}
-	return 0;
+	return AfficherBouton(g->renderer, &g->startButton);
 }
 
 
@@ -334,6 +481,14 @@ int SetupNormalJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 		bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
 
+	/*Initialization*/
+	for(int q=0; q<BOARD_SIZE; q++) {
+		for(int r=0; r<BOARD_SIZE; r++) {
+			board[q][r].startingBlock = false;
+			board[q][r].finishHex = false;
+		}
+	}
+	
 
 	/**************RESET DES TABLEAUX***********/
 	for(int q=0; q<=BOARD_SIZE; q++) {
@@ -344,8 +499,7 @@ int SetupNormalJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 		}
 	}
 
-	const int hexSemiHeight = HEXSIZE * SDL_sqrt(3);
-
+	
 	/*Murs Extérieurs*/
 	DrawOutsideWalls(renderer, VerticalWalls, DiagupWalls, DiagDownWalls);
 
@@ -355,14 +509,125 @@ int SetupNormalJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 	int dr_centre[7] = {0, 1, 1, 0, -1, -1, 0};
 	for(int l=0; l<7; l++) {
 		GetTopCoordinates(BOARD_RADIUS + dq_centre[l], BOARD_RADIUS + dr_centre[l], &x, &y);
-		FillHexagonFromTop(renderer, x, y, hexSemiHeight, HEXSIZE);
+		if (FillHexagonFromTop(renderer, x, y, HEXSEMIHEIGHT, HEXSIZE) != 0) return -1;
 	}
 
-	int q_vertical_walls[40] = {};
-	int r_vertical_walls[40] = {};
+	const Point vertical_walls[29] = {
+		{12, 0},
+		{18, 1},
+		{12, 2},
+		{8, 4},
+		{5, 5}, {13, 5}, {16, 5}, {17, 5},
+		{11, 6}, 
+		{7, 8}, {9, 8}, {11, 8},
+		{2, 9}, {3, 9}, {8, 9}, {11, 9}, {13, 9},
+		{8, 10}, {10, 10},{17, 10},
+		{12, 11},
+		{4, 12},
+		{7, 13},
+		{11, 15},
+		{6, 16}, {7, 16},
+		{2, 17}, {3, 17},
+		{5, 18}	
+	};
 
+	const Point diagonal_up_walls[29] = {
+		{0, 14},
+		{2, 10},
+		{4, 12},
+		{5, 6},
+		{6, 9}, {6, 17},
+		{7, 14},
+		{8, 5}, {8, 9}, {8, 11},
+		{9, 8}, {9, 11},
+		{10, 6}, {10, 8}, {10, 10},
+		{11, 2},
+		{12, 10}, {12, 12},
+		{13, 5},
+		{16, 11},
+		{17, 1},
+		{18, 3}, {18, 6},
+		{0, 0}, {0, 0}, {0, 0}, 
+		{0, 0}, {0, 0}, {0, 0}
+	};
+
+	const Point diagonal_down_walls[29] = {
+		//q_top+r_bot-s = 10
+		{7, 3}, {2, 8}, //s=0
+		{6, 5}, //s=1
+		{8, 5}, //s=3
+		{12, 2}, //s=4
+		{6, 9}, //s=5
+		{11, 6}, {5, 12}, //s=7
+		{10, 8}, {8, 10}, //s=8
+		{18, 1}, {13, 6}, {11, 8}, {8, 11}, //s=9
+		{11, 9}, {9, 11}, {2, 18}, //s=10
+		{8, 13}, //s=11
+		{16, 6}, {12, 10}, //s=12
+		{12, 12}, //s=14
+		{11, 15}, //s=16
+		{17, 10}, //s=17
+		{16, 12}, {11, 17}, //s=18
+		{0, 0}, {0, 0}, {0, 0},
+		{0, 0}
+	};
+
+	Point p;		
+	for(int i=0; i<29; i++) {
+		p = vertical_walls[i];
+		VerticalWalls[p.q][p.r] = true;
+		DrawVerticalWall(renderer, p.q, p.r);
+
+		p = diagonal_up_walls[i];
+		DiagupWalls[p.q][p.r] = true;
+		DrawDiagUpWall(renderer, p.q,  p.r);
+
+		p = diagonal_down_walls[i];
+		DiagDownWalls[p.q][p.r] = true;
+		DrawDiagDownWall(renderer, p.q, p.r);
+	}
+
+	/*****************JETONS********************/
+	Point posJetons[17] = {
+		{6, 8}, {17, 1}, {5, 5}, {10, 6},
+		{12, 9}, {2, 9}, {13, 5}, {4, 12},
+		{6, 16}, {8, 4}, {12, 11}, {16, 10},
+		{11, 2}, {10, 15}, {2, 17}, {7, 13},
+		{16, 5}
+	};
+
+	for(int k=0; k<17; k++) {
+		positionJetons[k] = posJetons[k];
+		board[posJetons[k].q][posJetons[k].r].finishHex = true;
+		board[posJetons[k].q][posJetons[k].r].finishColor = k%4;
+		board[posJetons[k].q][posJetons[k].r].finishElement = k/4;	
+		DrawJeton(renderer, jetons, k, positionJetons[k]);
+	}
+	return 0;
+}
+
+int SetupNormalRobots(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE]) {
+	SDL_Color sb_colors[] = {sb_blue, sb_red, sb_green, sb_yellow};
 	
 
+	Point posRobots[N_Robots] = {{7, 18}, {7, 5}, {2, 14}, {12, 6}};
+
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+	int x, y;
+	Point p;
+	actuel->dist = 0;
+	for (int i=0; i<N_Robots; i++) {
+		p = posRobots[i];
+		actuel->positions[i] = p;
+		GetTopCoordinates(p.q, p.r, &x, &y);
+		SetColor(renderer, sb_colors[i]);
+		if (FillHexagonFromTop(renderer, x, y+4, (HEXSIZE - 2)*SDL_sqrt(3), HEXSIZE - 2) != 0) return -1;
+		GetPrintingCoordinates(p.q, p.r, &x, &y);
+		if (PrintSubTexture(renderer, robots, x, y, i, 0, printing_size) != 0) return -1;		
+		board[p.q][p.r].startingBlock = true;
+		board[p.q][p.r].startColor = sb_colors[i];
+	}
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 	return 0;
 }
 
@@ -372,10 +637,7 @@ int SetupRandomJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 		bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
 		bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
-	const int hexSemiHeight = HEXSIZE * SDL_sqrt(3);
-
-	//bool Walls[3][BOARD_SIZE+1][BOARD_SIZE+1] = {VerticalWalls, DiagupWalls, DiagDownWalls};
-
+	
 	/*RESET BOARD*/
 	for(int q=0; q<BOARD_SIZE; q++) {
 		for(int r=0; r<BOARD_SIZE; r++) {
@@ -396,7 +658,42 @@ int SetupRandomJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 	DrawOutsideWalls(renderer, VerticalWalls, DiagupWalls, DiagDownWalls);
 
 	/*Centre*/
-	DrawCenter(renderer, VerticalWalls, DiagupWalls, DiagDownWalls);
+	DrawCenter(renderer);
+
+	const Point vertical_walls[6] = {
+		{9, 8}, {11, 8},
+		{8, 9}, {11, 9},
+		{8, 10}, {10, 10}
+	};
+	
+	const Point diagonal_up_walls[6] = {
+		
+		{8, 9}, {8, 11},
+		{9, 8}, {9, 11},
+		{10, 8}, {10, 10},
+	};
+
+	const Point diagonal_down_walls[6] = {
+		//q_top+r_bot-s = 10
+		{10, 8}, {8, 10}, //s=8
+		{11, 8}, {8, 11}, //s=9
+		{11, 9}, {9, 11} //s=10
+	};
+
+	Point p;
+	for(int k=0; k<6; k++) {
+		p = vertical_walls[k];
+		VerticalWalls[p.q][p.r] = true;
+		DrawVerticalWall(renderer, p.q, p.r);
+
+		p = diagonal_up_walls[k];
+		DiagupWalls[p.q][p.r] = true;
+		DrawDiagUpWall(renderer, p.q, p.r);
+
+		p = diagonal_down_walls[k];
+		DiagDownWalls[p.q][p.r] = true;
+		DrawDiagDownWall(renderer, p.q, p.r);
+	}
 
 	/*MURS SUR LE BORD*/
 	for(int k=0; k<BOARD_RADIUS; k++) {
@@ -438,8 +735,8 @@ int SetupRandomJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 			p = RandomPoint(r_min, r_max);
 		}
 		board[p.q][p.r].finishHex = true;
-		board[p.q][p.r].c = k%4;
-		board[p.q][p.r].e = k/4;
+		board[p.q][p.r].finishColor = k%4;
+		board[p.q][p.r].finishElement = k/4;
 		positionsJetons[k] = p;
 		GetPrintingCoordinates(p.q, p.r, &x, &y);
 		PrintSubTexture(renderer, jetons, x, y, k%4, k/4, printing_size);
@@ -454,7 +751,7 @@ int SetupRandomJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 			int cote = RandomInt(0, 5);
 			int q = contour[cote].q, r = contour[cote].r;
 			int max = 0;
-			while (max < 10000 && alreadyAWallThere(VerticalWalls, DiagupWalls, DiagDownWalls, cote%3, q, r)) {
+			while (max < 10000) { // && alreadyAWallThere(VerticalWalls, DiagupWalls, DiagDownWalls, cote%3, q, r)) {
 				cote = RandomInt(0, 5);
 				q = contour[cote].q;
 				r = contour[cote].r;
@@ -472,15 +769,12 @@ int SetupRandomJetonsAndWalls(SDL_Renderer *renderer, dimTexture *jetons, Hex bo
 }
 
 
-int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Hex board[BOARD_SIZE][BOARD_SIZE]) {
+int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE]) {
 
 	SDL_Color sb_colors[] = {sb_blue, sb_red, sb_green, sb_yellow};
-	/*******INITIALIZATION******/
-	for(int q=0; q<BOARD_SIZE; q++) {
-		for(int r=0; r<BOARD_SIZE; r++) {
-			board[q][r].startingBlock = false;
-		}
-	}
+	
+
+
 	//r_min et r_max
 	int r_min[BOARD_SIZE];
 	int r_max[BOARD_SIZE];
@@ -495,16 +789,16 @@ int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Hex board[BOAR
 			v--;
 		}
 	}
-	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 	int x, y;
+	actuel->dist = 0;
 	for (int i=0; i<N_Robots; i++) {
 		Point p = RandomPoint(r_min, r_max);
 		while (board[p.q][p.r].finishHex || board[p.q][p.r].startingBlock) {
 			p = RandomPoint(r_min, r_max);
 		}
-		GetTopCoordinates(p.q, p.r, &x, &y);
-		SetColor(renderer, sb_colors[i]);
-		if (FillHexagonFromTop(renderer, x, y+4, (HEXSIZE - 2)*SDL_sqrt(3), HEXSIZE - 2) != 0) return -1;
+		actuel->positions[i] = p;
+		
+		DrawStartingBlock(renderer, p.q, p.r, sb_colors[i]);
 		GetPrintingCoordinates(p.q, p.r, &x, &y);
 		if (PrintSubTexture(renderer, robots, x, y, i, 0, printing_size) != 0) return -1;		
 		board[p.q][p.r].startingBlock = true;

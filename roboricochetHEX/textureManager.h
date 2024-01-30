@@ -8,18 +8,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <assert.h>
+#include "struct.h"
 
 
-typedef struct Texture_Atlas {
-	SDL_Texture* texture;
-	SDL_Rect dimensions;
-	int layer;
-
-	int sub_w; 
-	int sub_h;
-	//For atlases ONLY --> they HAVE to be equal to 0 if the texture is not an atlas
-
-} dimTexture;
 
 
 bool inBounds(int x, int min, int max);
