@@ -44,7 +44,7 @@ typedef struct sq {
 	Couleur finishColor;
 } Square;
 
-/******************************GRAPHE*************************/
+/******************************GRAPHE/Minstack*************************/
 
 typedef struct Sommet {
 	Point positions[N_Robots];
@@ -66,6 +66,14 @@ typedef struct CheminList {
 	Point positions[N_Robots];
 	struct CheminList* suivant;
 } Chemin;
+
+// nouveau
+typedef struct PrioMinStack {
+    int capacite;
+    int remplissage;
+    Sommet* tableau;
+    double* priorite;
+} PMinStack;
 
 typedef struct zipper {
 	Chemin* gauche;
