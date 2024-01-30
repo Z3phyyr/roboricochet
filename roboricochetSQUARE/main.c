@@ -131,7 +131,21 @@ int main (int argc, char** argv) {
 							throwwithCondition(InitializeRoboRicochet(&g, "r") < 0, "Error during initialisation", &g);
 							g.actuel.dist = 0;
 							break;
-						
+						case SDLK_a :
+						// lancer astar avec l'heuristique donnée (scanf)
+							int numero;
+							printf("Choix de l'heuristique, noter le numero :\n (1) distance euclidienne\n (2) ??? \n (3)? ? ?")
+							scanf("%i",&numero); // mettre : "1"
+							switch (numero)	{
+								case 1 :
+									printf("\nLancement de Astar avec la distance euclidienne\n");
+									clock_t t1 = clock();
+									g->z = a_star(g->actuel, g->positionsJetons[Choix], c, h_euclidienne, g->horizontalWalls, g->verticalWalls);
+									clock_t t2 = clock();
+									printf("Temps d'éxécution = %f\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+									AffichageTexteInformatif(g->renderer, g->z.distance_totale);
+							}
+
 
 						case SDLK_LEFT:
 							if (cheminpresent) {
