@@ -9,18 +9,12 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <math.h>
 
 #include "textureManager.h"
 #include "struct.h"
 
 
-typedef struct Bouton {
-	SDL_Rect shape;
-	SDL_Color outline_color;
-	SDL_Color color;
-	//const char* texte;
-} Button;
+
 
 int AfficherBouton(SDL_Renderer* renderer, Button* start);
 bool CheckBoutonPresse(Button* b, int x, int y);

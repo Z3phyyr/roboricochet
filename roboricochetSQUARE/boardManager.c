@@ -8,8 +8,6 @@ const SDL_Color sb_yellow = {240, 244, 0, 150};
 
 
 
-//const int WallNumber = BOARD_SIZE * 2;
-
 void SetColor (SDL_Renderer* renderer, SDL_Color color) {
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
@@ -20,13 +18,11 @@ int RandomInt(int min, int max) {
 }
 
 int RandomUnion (int min1, int max1, int min2, int max2) {
-	int r1 = RandomInt(min1, max1);
-	int r2 = RandomInt(min2, max2);
 	int u = RandomInt(0, 1);
 
-	if (u == 1) return r1;
+	if (u == 1) return RandomInt(min1, max1);
 
-	return r2;
+	return RandomInt(min2, max2);
 }
 
 void RandomPositionPasCentre(int* i, int* j) {
@@ -197,24 +193,24 @@ int InitializeRoboRicochet(GameStruct* g, char* id) {
 	//Initialiser différents plateaux selon les valeurs de id (nombres)
 
 	if (!SDL_strcmp(id, "r")) {
-		if (SetupEmptyBoard(g->renderer, g->board) < 0 ||
+		if (SetupEmptyBoard(g->renderer) < 0 ||
 		SetupRandomJetonsAndWalls(g->renderer, g->jetons, g->positionsJetons, g->board, 
 								  g->horizontalWalls, g->verticalWalls) < 0 ||
 		SetupRandomRobots(g->renderer, g->robots, g->board, &g->actuel) < 0) {
 			return -1;
 		}
 	} else {
-		if (SetupEmptyBoard(g->renderer, g->board) < 0 ||
+		if (SetupEmptyBoard(g->renderer) < 0 ||
 		SetupNormalJetonsAndWalls(g->renderer, g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
 		SetupNormalRobots(g->renderer, g->robots, &g->actuel, g->board) < 0) {
 			return -1;
 		}
 		
 	} 
-	AfficherBouton(g->renderer, &g->startButton);
+	return AfficherBouton(g->renderer, &g->startButton);
 }
 
-int SetupEmptyBoard(SDL_Renderer* renderer, Square board[BOARD_SIZE][BOARD_SIZE]) {
+int SetupEmptyBoard(SDL_Renderer* renderer) {
 	SetColor(renderer, white);
 	SDL_RenderClear(renderer);
 	for (int i=0; i<BOARD_SIZE; i++) {
@@ -409,6 +405,22 @@ int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point 
 		horizontalWalls[k][BOARD_SIZE] = true;
 	}
 
+	/*******************Murs sur les côtés*****************/
+	//0 = Gauche; 1 = Haut; 2 = Droite; 3 = Bas
+	int m[4] = {0, 0, BOARD_SIZE-1, BOARD_SIZE - 1};
+	
+	for(int c=0; c<4; c++) {
+		int num1 = RandomInt(1, BOARD_SIZE - 1);
+		int num2 = RandomInt(1, BOARD_SIZE - 1);
+		if (c%2 == 0) {
+			horizontalWalls[m[c]][num1] = true;
+			horizontalWalls[m[c]][num2] = true;
+		} else {
+			verticalWalls[m[c]][num1] = true;
+			verticalWalls[m[c]][num2] = true;
+		}
+	}
+
 	/*******************Centre********************/
 	
 	int centre[] = {milieu - 1, milieu + 1};
@@ -427,7 +439,7 @@ int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point 
 			int i, j;
 			RandomPositionPasCentre(&i, &j);
 			int max = 0;
-			while (board[i][j].finishSquare || max > 10000) { 
+			while (board[i][j].finishSquare && max < 10000) { 
 				//No two symbols on same square
 				RandomPositionPasCentre(&i, &j);
 				max++;
@@ -484,7 +496,7 @@ int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[B
 		RandomPositionPasCentre(&i, &j);
 
 		int max = 0;
-		while (board[i][j].finishSquare || board[i][j].startingBlock || max > 10000) {
+		while (board[i][j].finishSquare && board[i][j].startingBlock && max < 10000) {
 			//No starting block on finish block or on other starting block
 			RandomPositionPasCentre(&i, &j);
 			max++;
@@ -495,7 +507,8 @@ int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[B
 		board[i][j].startColor = sb_colors[k];
 		int x = x_offset + i*sq_size;
 		int y = y_offset + j*sq_size;
-		DrawStartingBlock(renderer, i, j, sb_colors[k]);
-		PrintSubTexture(renderer, robots, x + 2, y + 2, k, 0, sq_size - 4);
+		if (DrawStartingBlock(renderer, i, j, sb_colors[k]) != 0 ||
+		PrintSubTexture(renderer, robots, x + 2, y + 2, k, 0, sq_size - 4) != 0) return -1;
 	}
+	return 0;
 }

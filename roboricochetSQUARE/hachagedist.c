@@ -21,7 +21,35 @@ void InitHashDist(HashDist* d) {
 }
 
 
+void RedimmensionerHashDist(HashDist* d) {
+	SList** old = d->table;
+	int old_w = d->w;
+	d->w = 2*old_w;
+	d->table = (SList**) malloc(d->w*sizeof(CList*));
+	assert(d->table != NULL);
+	d->size = 0;
+	SList* l = NULL;
+	SList* suivant = NULL;
+	for(int i=0; i<old_w; i++) {
+		l = old[i];
+		d->table[i] = NULL;
+		while (l != NULL) {
+			AjouteHashDist(l->elem, d);
+			suivant = l->suivant;
+			free(l);
+			l = suivant;
+		}
+	}
+	free(old);
+}
+
+
 void AjouteHashDist(Sommet a, HashDist* d) {
+	
+	if (d->w < d->size) {
+		RedimmensionerHashDist(d);
+	}
+
 	const int hache = Hachage(d->w, a);
 	SList* l = d->table[hache];
 	while (l != NULL) {
@@ -36,7 +64,7 @@ void AjouteHashDist(Sommet a, HashDist* d) {
 	new->suivant = d->table[hache];
 	CopieSommet(a, &new->elem);
 	d->table[hache] = new;	
-	return;
+	d->size++;
 }
 
 

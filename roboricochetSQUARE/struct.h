@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
+#include "textureManager.h"
+#include "boardManager.h"
 
 #define N_Robots 4
 
@@ -76,6 +78,7 @@ typedef struct zipper {
 typedef struct HachageDist {
 	SList** table;
 	int w;
+	int size;
 } HashDist;
 
 /****************************HACHAGE*************************/
@@ -94,6 +97,36 @@ typedef struct liste {
 typedef struct Hashtable {
 	CList** table;
 	int w;
+	int size;
 } HashTbl;
+
+/******************************INTERFACE*************************/
+
+typedef struct Bouton {
+	SDL_Rect shape;
+	SDL_Color outline_color;
+	SDL_Color color;
+	//const char* texte;
+} Button;
+
+/*****************************GAMESTRUCT*************************/
+
+
+typedef struct GS {
+	SDL_Window* window;
+	SDL_Renderer* renderer;
+	dimTexture* jetons;
+	dimTexture* robots;
+
+	Sommet actuel;
+	Point positionsJetons[16];
+	Button startButton;
+
+	Square board[BOARD_SIZE][BOARD_SIZE];
+	bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1];
+	bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1];
+	
+	Zipper z;
+} GameStruct;
 
 #endif //STRUCT

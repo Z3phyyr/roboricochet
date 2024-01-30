@@ -9,6 +9,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include "struct.h"
 #include "graphe.h"
 #include "errorManager.h"
 #include "boardManager.h"
@@ -33,6 +34,35 @@ const int window_h = 800;
 
 const SDL_Color outline_bouton = {155, 155, 155, 255};
 const SDL_Color couleur_bouton = {50, 50, 50, 255};
+
+
+
+int HandleMouseClicks(GameStruct* g, SDL_Event* e) {
+	if (CheckBoutonPresse(&g->startButton, e->motion.x, e->motion.y)) {
+
+		int Choix = RandomInt(0, 15);
+		Element e = Choix / 4;
+		Couleur c = Choix % 4;
+		SetColor(g->renderer, black);
+		static const SDL_Rect centre = {x_offset + (milieu-1)*sq_size, y_offset + (milieu-1)*sq_size, 2*sq_size, 2*sq_size};
+		throwwithCondition(SDL_RenderFillRect(g->renderer, &centre) || 
+		    PrintSubTexture(g->renderer, g->jetons, x_offset + (BOARD_SIZE/2.0 - 0.5)*sq_size, 
+		    y_offset + (BOARD_SIZE/2.0 - 0.5)*sq_size, c, e, sq_size) < 0, 
+		    "Central Token display triggered an exception", g);
+		SDL_RenderPresent(g->renderer);
+
+		printf("Lancement de DIJKSTRA\n");
+		clock_t t1 = clock();
+		g->z = Dijkstra(g->actuel, g->positionsJetons[Choix], c, g->horizontalWalls, g->verticalWalls);
+		clock_t t2 = clock();
+		printf("Temps d'éxécution = %f\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+		AffichageTexteInformatif(g->renderer, g->z.distance_totale);
+			
+		g->actuel.dist = 0;
+	}
+	return 0;
+}
+
 
 
 
@@ -68,7 +98,7 @@ int main (int argc, char** argv) {
 
 
 	g.actuel = (Sommet) {{{1, 2}, {0, 0}, {7, 4}, {12, 5}}, 0};
-	Zipper z = {NULL, NULL};
+	g.z = (Zipper) {NULL, NULL, 0};
 
 	g.startButton = (Button) {(SDL_Rect) {900, 450, 50, 20}, outline_bouton, couleur_bouton};
 
@@ -85,28 +115,7 @@ int main (int argc, char** argv) {
 					break;
 
 				case SDL_MOUSEBUTTONDOWN:
-					if (CheckBoutonPresse(&g.startButton, e.motion.x, e.motion.y)) {
-						if (cheminpresent) {
-							FreeZipper(z);
-
-						}
-						int Choix = RandomInt(0, 15);
-						Element e = Choix / 4;
-						Couleur c = Choix % 4;
-						SetColor(g.renderer, black);
-						static const SDL_Rect centre = {x_offset + (milieu-1)*sq_size, y_offset + (milieu-1)*sq_size, 2*sq_size, 2*sq_size};
-						throwwithCondition(SDL_RenderFillRect(g.renderer, &centre) || 
-										   PrintSubTexture(g.renderer, g.jetons, x_offset + (BOARD_SIZE/2.0 - 0.5)*sq_size, 
-										   y_offset + (BOARD_SIZE/2.0 - 0.5)*sq_size, c, e, sq_size) < 0, 
-										   "Central Token display triggered an exception", &g);
-						SDL_RenderPresent(g.renderer);
-
-						printf("Lancement de DIJKSTRA\n");
-						z = Dijkstra(g.actuel, g.positionsJetons[Choix], c, g.horizontalWalls, g.verticalWalls);
-						AffichageTexteInformatif(g.renderer, z.distance_totale);
-						cheminpresent = true;	
-						g.actuel.dist = 0;
-					}
+					HandleMouseClicks(&g, &e);
 					break;
 				
 				case SDL_KEYDOWN: 
@@ -126,21 +135,21 @@ int main (int argc, char** argv) {
 
 						case SDLK_LEFT:
 							if (cheminpresent) {
-								throwwithCondition(DeplaceGauche(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &z) != 0, "DeplaceGauche triggered an exception", &g);
-								AffichagePosition(g.renderer, g.actuel.dist, z.distance_totale);
+								throwwithCondition(DeplaceGauche(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &g.z) != 0, "DeplaceGauche triggered an exception", &g);
+								AffichagePosition(g.renderer, g.actuel.dist, g.z.distance_totale);
 							}
 							break;
 						case SDLK_RIGHT: 
 							if (cheminpresent) {
-								throwwithCondition(DeplaceDroite(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &z) != 0, "DeplaceDroite triggered an exception", &g);
-								AffichagePosition(g.renderer, g.actuel.dist, z.distance_totale);
+								throwwithCondition(DeplaceDroite(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &g.z) != 0, "DeplaceDroite triggered an exception", &g);
+								AffichagePosition(g.renderer, g.actuel.dist, g.z.distance_totale);
 							}
 							
 							break;
 
 
 						case SDLK_f:
-							FreeZipper(z);
+							FreeZipper(g.z);
 							cheminpresent = false;
 							
 							SDL_SetRenderDrawColor(g.renderer, 255, 255, 255, 255);
@@ -160,7 +169,6 @@ int main (int argc, char** argv) {
 	}
 
 	DestroyEverything (&g);
-	FreeZipper(z);
 	TTF_Quit();
 	SDL_Quit();
 

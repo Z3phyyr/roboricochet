@@ -1,5 +1,6 @@
 #include "hachage.h"
 #include "graphe.h"
+#include <assert.h>
 #include <stdlib.h>
 
 void FreeCList(CList* l) {
@@ -24,6 +25,7 @@ int Hachage(const int w, Sommet s) {
 }
 
 void InitHashTbl(HashTbl *h) {
+	assert(h->w > 0);
 	h->table = malloc(h->w * sizeof(CList*));
 	assert(h->table != NULL);
 	for (int k=0; k<h->w; k++) {
@@ -52,10 +54,35 @@ void AfficherHashTbl(HashTbl* h) {
 	}
 }
 
+void RedimmensionerHashTbl(HashTbl* h) {
+	CList** old = h->table;
+	int old_w = h->w;
+	h->w = 2*old_w;
+	h->table = (CList**) malloc(h->w*sizeof(CList*));
+	assert(h->table != NULL);
+	h->size = 0;
+	CList* l = NULL;
+	CList* suivant = NULL;
+	for(int i=0; i<old_w; i++) {
+		l = old[i];
+		h->table[i] = NULL;
+		while (l != NULL) {
+			AjouteHashTbl(l->c.cle, l->c.valeur, h);
+			suivant = l->suivant;
+			free(l);
+			l = suivant;
+		}
+	}
+	free(old);
+}
+
 void AjouteHashTbl(Sommet cle, Sommet valeur, HashTbl *h) {
   	/*
 		Ajoute sans doublons le couple (cle, valeur) dans h
 	*/
+	if (h->w < h->size) {
+		RedimmensionerHashTbl(h);
+	}
 	const int hache = Hachage(h->w, cle);
 	CList* l = h->table[hache];
 	while (l != NULL) {
@@ -72,6 +99,7 @@ void AjouteHashTbl(Sommet cle, Sommet valeur, HashTbl *h) {
 	CopieSommet(valeur, &new_l->c.valeur);
   	new_l->suivant = h->table[hache];
   	h->table[hache] = new_l;
+	h->size++;
 }
 
 Sommet ChercheHashTbl(HashTbl* h, Sommet cle) {

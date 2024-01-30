@@ -2,11 +2,8 @@
 #include <string.h>
 #include "interface.h"
 
-static const SDL_Color black = {0, 0, 0, 255};
-static const SDL_Color white = {255, 255, 255, 255};
 
-
-static void SetColor (SDL_Renderer* renderer, SDL_Color color) {
+void SetColor (SDL_Renderer* renderer, SDL_Color color) {
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
 
@@ -22,7 +19,6 @@ int AfficherBouton(SDL_Renderer* renderer, Button* b) {
 	return 0;
 }
 
-int a(char* msg, ...);
 
 bool CheckBoutonPresse(Button* b, int x, int y) {
 	return (inBounds(x, b->shape.x, b->shape.x + b->shape.w)

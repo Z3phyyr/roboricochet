@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 //Modulo pour table de hachage
-const long unsigned mersenne = 131071;
+const long unsigned mersenne = 524287;
 
 bool PasDeRobot(int i, int j, Sommet a, Couleur actuel) {
 	for (int k=0; k<N_Robots; k++) {
@@ -234,8 +234,8 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 		SORTIE : chemin le plus court de s à t
 	*/
 	int tours = 0;
-	HashTbl h = {NULL, mersenne};
-	HashDist d = {NULL, mersenne};
+	HashTbl h = {NULL, mersenne, 0};
+	HashDist d = {NULL, mersenne, 0};
 	InitHashTbl(&h);
 	InitHashDist(&d);
 	SMinStack file;
@@ -249,9 +249,10 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	SList* descendants = NULL;
 	while (file.remplissage != 0) {
 		ExtraireMinStack(&file, &v);
-		if (tours % 1000 == 0) printf("(%d, %d) ; dist : %d ; tours : %d\n", v.positions[couleur].i, v.positions[couleur].j, v.dist, tours);
+		if (tours % 1000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
 				
 		if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j) {
+			printf("Nombre total de tours : %d\n", tours);
 			CopieSommet(v, &final);
 			FreeSMinStack(&file);
 		} else {
@@ -271,11 +272,14 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 		}
 		tours++;
 	}
-	FreeHashDist(&d);
+	
 	for (int k=0; k<N_Robots; k++) {
 		printf("(%d, %d)  ", final.positions[k].i, final.positions[k].j);
 	}
 	printf("\nDistance finale = %d\n", final.dist);
+	printf("hashtbl : w = %d; size = %d\n", h.w, h.size);
+	printf("hashdist :  w = %d; size = %d\n", d.w, d.size);
+	FreeHashDist(&d);
 	//t non accessible (ne devrait pas arriver en pratique)
 	if (final.dist == -1) return (Zipper) {NULL, NULL, 0};
 	

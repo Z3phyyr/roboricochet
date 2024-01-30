@@ -10,22 +10,16 @@
 #include "textureManager.h"
 #include "boardManager.h"
 
-// typedef struct TextureList {
-// 	dimTexture* elem;
-// 	struct TextureList* next;
-// } TList;
+#include "struct.h"
+#include "graphe.h"
 
-// TList* TListAdd (TList* list, dimTexture* e);
-// TList* TListRemove (TList* list, dimTexture* e);
-// void FreeTList (TList* list);
-
-
-void SDL_ExitWithError (const char* msg);
 /**
  * Exit the program with the error contained in msg.
  * Also displays the latest SDL_Error loaded with SDL_GetError ()
  * \param message to display as error
 **/
+void SDL_ExitWithError (const char* msg);
+
 void DestroyEverything (GameStruct* g);
 void throwwithCondition (bool condition, const char* msg, GameStruct* g);
 

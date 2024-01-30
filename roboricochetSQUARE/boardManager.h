@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include "struct.h"
 #include "textureManager.h"
 #include "interface.h"
 #include "struct.h"
@@ -24,22 +24,6 @@ static const int y_offset = 50;
 static const int sq_size = 40;
 
 
-typedef struct GS {
-	SDL_Window* window;
-	SDL_Renderer* renderer;
-	dimTexture* jetons;
-	dimTexture* robots;
-
-	Sommet actuel;
-	Point positionsJetons[16];
-	Button startButton;
-
-	Square board[BOARD_SIZE][BOARD_SIZE];
-	bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1];
-	bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1];
-
-	int sq_size;
-} GameStruct;
 
 
 static const int milieu = BOARD_SIZE / 2;
@@ -64,7 +48,7 @@ int DeplaceDroite(SDL_Renderer* renderer, dimTexture* robots, dimTexture* jetons
 				   Square board[BOARD_SIZE][BOARD_SIZE], Zipper* z);
 
 
-int SetupEmptyBoard(SDL_Renderer* renderer, Square board[BOARD_SIZE][BOARD_SIZE]);
+int SetupEmptyBoard(SDL_Renderer* renderer);
 
 int SetupNormalJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point positionJetons[16], Square board[BOARD_SIZE][BOARD_SIZE],
 			bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1], bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1]);
