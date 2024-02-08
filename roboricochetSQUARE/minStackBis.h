@@ -1,13 +1,21 @@
-#ifndef _SDYNTAB_
-#define _SDYNTAB_
+#ifndef _PRIOMINSTACK_
+#define _PRIOMINSTACK_
 
 #include "struct.h"
 #include "graphe.h"
 
-void InitPMinStack(SMinStack* stack);
-void FreePMinStack(SMinStack* s);
-void RedimensionnerPMinStack(SMinStack* s);
-void InsererPMinStack(SMinStack* s, Sommet a, double p);
-int ExtrairePMinStack(SMinStack* s, Sommet* v);
 
-#endif //_SDYNTAB_
+typedef struct PrioMinStack {
+    int capacite;
+    int remplissage;
+    Sommet* tableau;
+    double* priorite;
+} PMinStack;
+
+void InitPMinStack(PMinStack* stack);
+void FreePMinStack(PMinStack* s);
+void RedimensionnerPMinStack(PMinStack* s);
+void InsererPMinStack(PMinStack* s, Sommet a, double p);
+int ExtrairePMinStack(PMinStack* s, Sommet* v);
+
+#endif //_PRIOMINSTACK_

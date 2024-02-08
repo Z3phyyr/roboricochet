@@ -215,6 +215,7 @@ void AfficherSList(SList* c) {
 
 void FreeChemin (Chemin* c) {
 	if (c == NULL) return;
+
 	Chemin* suivant = c->suivant;
 	free (c);
 	FreeChemin(suivant);
@@ -244,12 +245,12 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	InsererStack(&file, s);
 	Sommet final;
 	final.dist = -1;
-	Sommet v;
-	Sommet w;
+	Sommet v, w;
 	SList* descendants = NULL;
+	
 	while (file.remplissage != 0) {
 		ExtraireMinStack(&file, &v);
-		if (tours % 1000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
+		if (tours % 100000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
 				
 		if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j) {
 			printf("Nombre total de tours : %d\n", tours);

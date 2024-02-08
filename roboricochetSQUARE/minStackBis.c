@@ -1,4 +1,4 @@
-#include "minstack.h"
+#include "minstackBis.h"
 #include <stdlib.h>
 
 void InitPMinStack(PMinStack* stack) {
@@ -19,13 +19,13 @@ void FreePMinStack(PMinStack* s) {
 	s->remplissage = 0;
 }
 
-int FilsGauche(int i) {
+static int FilsGauche(int i) {
 	return 2*i+1;
 }
-int FilsDroit(int i) {
+static int FilsDroit(int i) {
 	return 2*i+2;
 }
-int Pere(int i) {
+static int Pere(int i) {
 	return (i-1)/2;
 }
 
@@ -82,6 +82,9 @@ void InsererPMinStack(PMinStack* s, Sommet a, double p) {
 	s->remplissage++;
 }
 
+
+
+
 int ExtrairePMinStack(PMinStack* s, Sommet* v) {
 	if (s->remplissage <= 0) {
 		return -1;
@@ -109,7 +112,7 @@ int ExtrairePMinStack(PMinStack* s, Sommet* v) {
 		if (i_max == i) break;
 
 		EchangeSommet(&s->tableau[i], &s->tableau[i_max]);
-        EnchangeInt(s->priorite, i, i_max);
+        EchangeDouble(s->priorite, i, i_max);
 		i = i_max;
 	}
 	return 0;

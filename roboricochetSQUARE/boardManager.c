@@ -207,7 +207,20 @@ int InitializeRoboRicochet(GameStruct* g, char* id) {
 		}
 		
 	} 
-	return AfficherBouton(g->renderer, &g->startButton);
+	
+
+	if (AfficherBouton(g->renderer, &g->startButton) != 0 ||
+		AfficherChoixHeuristiques(g->renderer, g->boutonsHeuristiques) != 0 ||
+		AfficherChoixJetons(g->renderer, g->boutonsJetons) != 0) {
+		return -1;
+	}
+
+	if (AffichageHeuristiqueChoisie(g->renderer, g->choixH) != 0 ||
+		AffichageJetonChoisi(g->renderer, g->choixJ) != 0) {
+		return -1;
+	}
+
+	return 0;
 }
 
 int SetupEmptyBoard(SDL_Renderer* renderer) {
@@ -316,11 +329,11 @@ int SetupNormalJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point 
 		{7, 12}
 	};
 
-	for (int k=0; k<16; k++) {
+	for (int k=0; k<NB_JETONS; k++) {
 		positionsJetons[k] = place_jetons[k];
 	}
 	
-	for (int k=0; k<17; k++) {
+	for (int k=0; k<NB_JETONS; k++) {
 		Point p = place_jetons[k];
 		int x = x_offset + p.i*sq_size;
 		int y = y_offset + p.j*sq_size;
@@ -434,34 +447,33 @@ int SetupRandomJetonsAndWalls(SDL_Renderer* renderer, dimTexture* jetons, Point 
 
 	/******************Jetons*********************/
 
-	for (int k=0; k<4; k++) {
-		for (int l=0; l<4; l++) {
-			int i, j;
+	for (int k=0; k<NB_JETONS; k++) {
+		int i, j;
+		RandomPositionPasCentre(&i, &j);
+		int max = 0;
+		while (board[i][j].finishSquare && max < 10000) { 
+			//No two symbols on same square
 			RandomPositionPasCentre(&i, &j);
-			int max = 0;
-			while (board[i][j].finishSquare && max < 10000) { 
-				//No two symbols on same square
-				RandomPositionPasCentre(&i, &j);
-				max++;
-			}
-			if (max > 9998) return -42;
-			positionJetons[4*k + l] = (Point) {i, j};
-			board[i][j].finishSquare = true;
-			board[i][j].finishElement = k;
-			board[i][j].finishColor = l;
-
-			/****Murs autour du jeton********/
-			int dj = RandomInt(0, 1); 
-			int di = RandomInt(0, 1); 
-			horizontalWalls[i][j + dj] = true;
-			verticalWalls[j][i + di] = true;
-			/********************************/
-
-			int x = x_offset + i*sq_size;
-			int y = y_offset + j*sq_size;
-			PrintSubTexture(renderer, jetons, x + 2, y + 2, l, k, sq_size - 4);
+			max++;
 		}
+		if (max > 9998) return -42;
+		positionJetons[k] = (Point) {i, j};
+		board[i][j].finishSquare = true;
+		board[i][j].finishElement = k/4;
+		board[i][j].finishColor = k%4;
+
+		/****Murs autour du jeton********/
+		int dj = RandomInt(0, 1); 
+		int di = RandomInt(0, 1); 
+		horizontalWalls[i][j + dj] = true;
+		verticalWalls[j][i + di] = true;
+		/********************************/
+
+		int x = x_offset + i*sq_size;
+		int y = y_offset + j*sq_size;
+		PrintSubTexture(renderer, jetons, x + 2, y + 2, k%4, k/4, sq_size - 4);
 	}
+
 		
 	/*******************Affichage des murs********************/
 

@@ -1,88 +1,102 @@
-#include "graphe.h"
 #include "astar.h"
-#include "hachage.h"
-#include "minStackBis.h"
-#include <limits.h>
-#include <stdlib.h>
 #include <math.h>
 
-// heuristiques
+//heuristiques
 
-double h_euclidienne (Sommet a, Point final){
-    double max = sqrt(2.)*16;
-    double dist_eucl = sqrt(pow(fabs(final.i-a.position[couleur].i),2) + pow(fabs(final.j-a.position[couleur].j),2));
+double h_euclidienne (Sommet a, Point final, Couleur c) {
+    double max = sqrt(2.)*BOARD_SIZE;
+    double dist_eucl = sqrt(pow(abs(final.i - a.positions[c].i),2) + 
+                            pow(abs(final.j - a.positions[c].j),2));
     return dist_eucl/max;
 }
 
-
-// création du chemin solution
-Chemin* FindPath (Chemin* chemin, Sommet t, Sommet s, int* total_dist){
-    int d = t.dist;
-    if(d==0 && EgaliteSommet(final, courant)){
-        *total_dist +=1;
-        return AjouterChemin(chemin, t);
-    }
-    descendants = DescendantDirects (t, horizontalWalls, verticalWalls);
-    Sommet u;
-    while (descendants != NULL) {
-		descendants = ExtraireSList(descendants, &u);
-        if (d == u.dist + 1){
-            *total_dist +=1;
-            return FindPath(dist, AjouterChemin(chemin,u), u, final, total_dist);
-        }
-    }
-    //Echec de récupération du sommet
-	printf("Echec de récupération d'un sommet\n\n");
-    *total_dist = 0;
-	return NULL
+double h_manhattan (Sommet a, Point final, Couleur c) {
+    double max = BOARD_SIZE*2;
+    double dist_man = abs(final.i - a.positions[c].i) + abs(final.j - a.positions[c].j);
+    return dist_man / max;
 }
 
+double h_3 (Sommet a, Point final, Couleur c) {
+    double max = BOARD_SIZE*2*N_Robots;
+    double dist_man = 0;
+    for(int k=0; k<N_Robots; k++) {
+        dist_man += abs(final.i - a.positions[k].i) + abs(final.j - a.positions[k].j);
+    }
+    return dist_man / max;
+}
+
+
+
+
 //fonction principale
-Zipper a_star (Sommet s, Point t, Couleur couleur, double (*h) (Sommet,Point) /*fonction heuristique*/,
+Zipper a_star (Sommet s, Point t, Couleur couleur, double (*h) (Sommet ,Point , Couleur) /*fonction heuristique*/,
 				 bool horizontalWalls[BOARD_SIZE][BOARD_SIZE+1], 
 				 bool verticalWalls[BOARD_SIZE][BOARD_SIZE+1]) {
    // création de la file avec s de priorité h(s)
     s.dist = 0;
     PMinStack file;
+    HashTbl hash = {NULL, mersenne, 0};
+    HashDist d = {NULL, mersenne, 0};
+    InitHashTbl(&hash);
+    InitHashDist(&d);
     InitPMinStack(&file);
-    double p = (*h) (s,t);
-    InsererStack(&file,s,p);
+    double p = (*h) (s,t, couleur);
+    InsererPMinStack(&file,s, p);
 
-   // création de variables utiles
-    Sommet v;
-    Sommet w;
+    // création de variables utiles
+    int tours = 0;
+    Sommet v, w;
+    Sommet final;
+    final.dist = -1;
     SList* descendants = NULL;
 
+     
+
     while(file.remplissage != 0){
-		//if (tours % 1000 == 0) printf("(%d, %d) ; dist : %d ; tours : %d\n", v.positions[couleur].i, v.positions[couleur].j, v.dist, tours);
-
         ExtrairePMinStack(&file,&v);
+
+        if (tours % 100000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
+       
         if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j){
-
-            int total_dist;
-            Chemin* res = NULL;
-            res = FindPath (chemin, t, s, &total_dist)
-            Zipper z = {NULL, res, *total_dist};
-
-            free(total_dist);
-            FreeSList(descendants);
-
-            return rep;
-        }
-        
-        else {
-			descendants = DescendantsDirects(v, horizontalWalls, verticalWalls);
+            printf("Nombre total de tours : %d\n", tours);
+            FreePMinStack(&file);
+            CopieSommet(v, &final);
+        } else {
+       	    descendants = DescendantsDirects(v, horizontalWalls, verticalWalls);
             while (descendants != NULL) {
-   				descendants = ExtraireSList(descendants, &w);
-                if (w.dist > v.dist + 1){
-					w.dist = v.dist + 1;
-                    p = (*h) (w,t);
-                    InsererPMinStack(&file,&w,p);
+   			    descendants = ExtraireSList(descendants, &w);
+                int newdist = RecupererDist(&d, w);
+                if (newdist > v.dist + 1){
+				    w.dist = v.dist + 1;
+                    p = (*h) (w, t, couleur);
+                    InsererPMinStack(&file, w, p + w.dist);
+                    AjouteHashTbl(w, v, &hash);
+                    AjouteHashDist(w, &d);
                 }
             }
         }
+        tours++;
     }
+    FreeHashDist(&d);
+
+    Chemin* chemin = NULL;
+    Sommet courant;
+    CopieSommet(final, &courant);
+	while (!EgaliteSommet(courant, s)) {
+		if (courant.dist == -1) {
+			//Echec de récupération du sommet
+			printf("Echec de récupération d'un sommet\n\n");
+			return (Zipper){NULL, NULL, 0};
+		} else {
+			chemin = AjouterChemin(chemin, courant);
+		}
+		courant = ChercheHashTbl(&hash, courant);
+	}
+	FreeHashTbl(&hash);
+    Zipper z = {NULL, chemin, final.dist}; 
+	return z;
 }
+
 
 /************** EXEMPLE DE FONTION AVEC UNE FONCTION EN ARGUMENT ***********************
 

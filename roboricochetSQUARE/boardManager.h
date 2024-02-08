@@ -1,8 +1,7 @@
 #ifndef BOARDMANAGER
 #define BOARDMANAGER
 
-//IMPERATIVEMENT DEFINIR UN ENTIER PAIR; MINIMUM 8 !!!!!!!
-#define BOARD_SIZE 16
+
 
 
 
@@ -25,13 +24,6 @@ static const int sq_size = 40;
 
 
 
-
-static const int milieu = BOARD_SIZE / 2;
-
-static const SDL_Color white = {255, 255, 255, 255};
-static const SDL_Color black = {0, 0, 0, 255};
-static const SDL_Color darkGrey = {100, 100, 100, 255};
-static const SDL_Color beige = {227,212,173, 255};
 
 
 void SetColor (SDL_Renderer* renderer, SDL_Color color);

@@ -12,6 +12,9 @@ void SDL_ExitWithError (const char* msg) {
 
 void DestroyEverything (GameStruct* g) {
 	FreeZipper(g->z);
+	SDL_DestroyTexture(g->startButton.texture);
+	FreeBoutonsHeuristiques(g->boutonsHeuristiques);
+	FreeBoutonsJetons(g->boutonsJetons); 
 	DestroyDimTexture(g->jetons);
 	DestroyDimTexture(g->robots);
 	SDL_DestroyRenderer(g->renderer);
