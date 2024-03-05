@@ -178,8 +178,8 @@ int comparaison (GameStruct* g, Donnees* d){
     }
     return n;
 }
-
-__ recuperer (GammeStruct* g, Donnees* d){
+// en cours :
+int recuperer (GammeStruct* g, Donnees* d){
 	/* prendre les données et les ajouter à un fichier .txt */
 	char* fichier;
 	scanf("%s", &fichier);
