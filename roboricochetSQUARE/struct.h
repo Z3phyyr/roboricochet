@@ -124,6 +124,13 @@ typedef struct Bouton {
 	SDL_Texture* texture;
 } Button;
 
+/************************COMPARAISON*****************************/
+
+typedef struct donnee{
+	double temps [NB_HEURISTIQUES] ;
+	int coups ;
+} Donnees;
+
 /*****************************GAMESTRUCT*************************/
 
 
