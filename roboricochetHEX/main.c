@@ -25,42 +25,48 @@
 
 #define FPSMILLISECONDLIMIT 33
 
-const int window_w = 1200;
+const int window_w = 1400;
 const int window_h = 800;
 
 const SDL_Color outline_bouton = {155, 155, 155, 255};
 const SDL_Color couleur_bouton = {50, 50, 50, 255};
-static const SDL_Color black = {0, 0, 0, 255};
-
-//const long unsigned mersenne = 131071;
 
 
-int HandleMouseClicks(GameStruct* g, SDL_Event* e) {
+void HandleMouseClicks(GameStruct* g, SDL_Event* e) {
 	if (CheckBoutonPresse(&g->startButton, e->motion.x, e->motion.y)) {
-						FreeZipper(&g->z);
-						const int jeton = rand () % 16;
-						
-						SetColor(g->renderer, black);
-						throwwithCondition(FillCenterHexagon(g->renderer) != 0 
-								|| DrawJeton(g->renderer, g->jetons, jeton, (Point){BOARD_RADIUS, BOARD_RADIUS}) != 0, 
-								"Central token display triggered an exception", g);
-						SDL_RenderPresent(g->renderer);
-						clock_t t1 = clock();
-						g->z = Dijkstra(g->actuel, g->positionJetons[jeton], jeton % 4, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
-						clock_t t2 = clock();
-						printf("Temps d'exécution : %f\n", ((double)(t2-t1))/CLOCKS_PER_SEC);
-						AffichageTexteInformatif(g->renderer, g->z.distance_totale);
-						g->actuel.dist = 0;
+		FreeZipper(&g->z);
+		const int jeton = rand () % 16;
+		SetColor(g->renderer, black);
+		throwwithCondition(FillCenterHexagon(g->renderer) != 0 
+							|| DrawJeton(g->renderer, g->jetons, jeton, (Point){BOARD_RADIUS, BOARD_RADIUS}) != 0, 
+							"Central token display triggered an exception", g);
+		SDL_RenderPresent(g->renderer);
+		clock_t t1 = clock();
+		g->z = Dijkstra(g->actuel, g->positionJetons[jeton], jeton % 4, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+		clock_t t2 = clock();
+		printf("Temps d'exécution : %f\n", ((double)(t2-t1))/CLOCKS_PER_SEC);
+		AffichageTexteInformatif(g->renderer, g->z.distance_totale);
+		g->actuel.dist = 0;
 	}
-	return 0;
+	for(int k=0; k<NB_HEURISTIQUES; k++) {
+		if (CheckBoutonPresse(&g->boutonsHeuristiques[k], e->motion.x, e->motion.y)) {
+			g->choixH = k;
+			AffichageHeuristiqueChoisie(g->renderer, g->choixH);
+		}
+	}
+	for (int k=0; k<NB_JETONS; k++) {
+		if (CheckBoutonPresse(&g->boutonsJetons[k], e->motion.x, e->motion.y)) {
+			g->choixJ = k;
+			AffichageJetonChoisi(g->renderer, g->choixJ);
+		}
+	}
 }
 
 
 
 int main(int argc, char** argv) {
 	GameStruct g;
-	const char* consola = "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/fonts/consola.ttf";
-
+	
 	srand(time(NULL));
 	
 	if (SDL_Init(SDL_INIT_VIDEO) != 0 || TTF_Init() != 0) {
@@ -84,13 +90,19 @@ int main(int argc, char** argv) {
 
 	g.jetons = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/images/jetons.bmp", 1, 100, 100);
 	g.robots = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/images/robots.bmp", 1, 100, 100);
+	g.choixH = -1;
+	g.choixJ = -1;
 
-	g.startButton = (Button){(SDL_Rect){850, 500, -1, -1}, 
+	g.startButton = (Button){(SDL_Rect){1000, 150, -1, -1}, 
 					outline_bouton, couleur_bouton, 
 					NULL};
 	g.z = (Zipper) {NULL, NULL, 0};
 	
-	throwwithCondition(GetButtonTextTexture(g.renderer, &g.startButton, "Start the algorithm", 25, consola) != 0, "ButtonInitialization triggered an exception", &g);
+	throwwithCondition(SetButtonTextTexture(g.renderer, &g.startButton, "Start the algorithm", 25, consola, black) != 0, "ButtonInitialization triggered an exception", &g);
+	g.boutonsJetons = InitBoutonsJetons(g.renderer, g.jetons);
+	g.boutonsHeuristiques = InitBoutonsHeuristiques(g.renderer);
+	throwwithCondition(g.boutonsJetons == NULL || g.boutonsHeuristiques == NULL, "Buttons initialization triggered an exception", &g); 
+	
 	/********************************************************************/
 
 	throwwithCondition(InitializeRoboRicochet(&g, "") != 0, "Initialize RoboRicochet triggered an exception", &g);
@@ -104,7 +116,7 @@ int main(int argc, char** argv) {
 					break;
 
 				case SDL_MOUSEBUTTONDOWN:
-					throwwithCondition(HandleMouseClicks(&g, &e) != 0, "HandleMouseClick triggered an exception", &g);
+					HandleMouseClicks(&g, &e);
 					break;
 
 				case SDL_KEYDOWN:

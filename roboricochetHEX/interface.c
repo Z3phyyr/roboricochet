@@ -1,8 +1,5 @@
 #include "interface.h"
 
-static const SDL_Color black = {0, 0, 0, 255};
-static const SDL_Color white = {255, 255, 255, 255};
-static const SDL_Color blue = {20, 20, 200, 255};
 
 
 const int textX = 850;
@@ -10,7 +7,13 @@ const int textY = 50;
 const int fontSize = 30;
 const int wrappedSize = 300;
 
-//const SDL_Rect effacement = {textX, textY + 2*fontSize, wrappedSize, fontSize};
+const int x_heuristiques = 750;
+const int y_heuristiques = 600;
+const int x_jetons = 1150;
+const int y_jetons = 500;
+
+const int x_choix = 900;
+const int y_choix = 300;
 
 
 static void SetColor (SDL_Renderer* renderer, SDL_Color color) {
@@ -23,22 +26,43 @@ int EffaceLignes(SDL_Renderer* renderer, int lineNumber, int n) {
 }
 
 
-int GetButtonTextTexture(SDL_Renderer* renderer, Button* button, const char* texte, int size, const char* font_path) {
-	TTF_Font* hell = TTF_OpenFont(font_path, size);
-	SDL_Surface* s = TTF_RenderText_Solid(hell, texte, blue);
-	TTF_CloseFont(hell);
+int SetButtonTextTexture(SDL_Renderer* renderer, Button* button, const char* texte, int size, 
+						 const char* font_path, const SDL_Color color) {
+	TTF_Font* font = TTF_OpenFont(font_path, size);
+	SDL_Surface* s = TTF_RenderText_Solid(font, texte, color);
+	TTF_CloseFont(font);
 
 	if (s == NULL) return -1;
 
 	button->shape.h = s->h;
 	button->shape.w = s->w;
 
-	button->texte = SDL_CreateTextureFromSurface(renderer, s);
+	button->texture = SDL_CreateTextureFromSurface(renderer, s);
 	SDL_FreeSurface(s);
 
-	if (button->texte == NULL) return -1;
+	if (button->texture == NULL) return -1;
 	
 	
+	return 0;
+}
+
+int SetButtonTexture(SDL_Renderer* renderer, Button* button, dimTexture* atlas, 
+			int sub_i, int sub_j, int size) {
+
+	SDL_Texture* t = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, size, size);
+	if (t == NULL) return -1;
+
+	button->shape.h = size;
+	button->shape.w = size;
+
+	SDL_SetRenderTarget(renderer, t);
+	SetColor(renderer, white);
+	SDL_RenderClear(renderer);
+	if (PrintSubTexture(renderer, atlas, 0, 0, sub_i, sub_j, size) != 0) return -1;
+	SDL_SetRenderTarget(renderer, NULL);
+
+	button->texture = t;
+
 	return 0;
 }
 
@@ -52,7 +76,7 @@ int AfficherBouton(SDL_Renderer* renderer, Button* b) {
 	if (SDL_RenderDrawRect(renderer, &b->shape) < 0) {
 		return -1;
 	}
-	if (SDL_RenderCopy(renderer, b->texte, NULL, &b->shape)) {
+	if (SDL_RenderCopy(renderer, b->texture, NULL, &b->shape)) {
 		return -1;
 	}
 
@@ -60,7 +84,7 @@ int AfficherBouton(SDL_Renderer* renderer, Button* b) {
 }
 
 void FreeButton(Button* b) {
-	SDL_DestroyTexture(b->texte);
+	SDL_DestroyTexture(b->texture);
 }
 
 
@@ -117,5 +141,134 @@ int AffichagePosition(SDL_Renderer* renderer, int distance, int distance_totale)
 	if (PrintWrappedText(renderer, line2, FixedSys, black, fontSize, textX, textY + 2*fontSize, wrappedSize) != 0) {
 		return -1;
 	}
+	return 0;
+}
+
+
+/************************CHOIX HEURISTIQUES*******************/
+
+Button* InitBoutonsHeuristiques(SDL_Renderer* renderer) {
+	Button* b = malloc(NB_HEURISTIQUES * sizeof(Button));
+	if (b == NULL) return NULL;
+
+	char* textes[] = {
+		"Dijkstra",
+		"ASTAR: euclidian distance",
+		"ASTAR: manhattan distance",
+		"ASTAR: manhattan sum distance"
+	};
+	SDL_Rect r = {x_heuristiques, y_heuristiques, -1, -1};
+	for(int k=0; k<NB_HEURISTIQUES; k++) {
+		b[k] = (Button) {r, black, darkGrey, NULL};
+		if (SetButtonTextTexture(renderer, &b[k], textes[k], 20, consola, magenta) != 0) return NULL;
+		r.y += 30;
+	}
+
+	return b;
+}
+
+void FreeBoutonsHeuristiques(Button* b) {
+	if (b != NULL) {
+		for(int k=0; k<NB_HEURISTIQUES; k++) {
+			SDL_DestroyTexture(b[k].texture);
+		}
+		free(b);
+	}
+}
+
+
+int AfficherChoixHeuristiques (SDL_Renderer* renderer, Button* heuristiques) {
+	for(int k=0; k<NB_HEURISTIQUES; k++) {
+		if (AfficherBouton(renderer, &heuristiques[k]) != 0) return -1;
+	}
+	return 0;
+}
+
+int AffichageHeuristiqueChoisie(SDL_Renderer* renderer, int choixH) {
+	char line1[100] = "Heuristique :";
+	char text[100];
+	switch (choixH) {
+		case 0: 
+			sprintf(text, "%s", " Dijkstra");
+			break;
+		case 1:
+			sprintf(text, "%s", " Euclidienne");
+			break;
+		
+		case 2:
+			sprintf(text, "%s", " Manhattan");
+			break;
+		case 3:
+			sprintf(text, "%s",  " Manhattan sum");
+			break;
+
+		default:
+			sprintf(text, "%s", " Aleatoire");
+			break;
+	}
+
+	strcat(line1, text);
+	SetColor(renderer, white);
+	if (SDL_RenderFillRect(renderer, &(SDL_Rect) {x_choix, y_choix, 450, 20}) != 0) return -1;
+	if (PrintText(renderer, line1, FixedSys, black, 20, x_choix, y_choix) != 0) return -1;
+
+	return 0;
+}
+
+
+/*************************CHOIX JETONS************************/
+
+Button* InitBoutonsJetons(SDL_Renderer* renderer, dimTexture* jetons) {
+	Button* b = malloc((NB_JETONS+1) * sizeof(Button));
+	if (b == NULL) return NULL;
+
+	SDL_Rect r = {x_jetons, y_jetons, -1, -1};
+	for(int k=0; k<NB_JETONS; k++) {
+		b[k] = (Button) {r, black, white, NULL};
+		if (SetButtonTexture(renderer, &b[k], jetons, k%4, k/4, 40) != 0) return NULL;
+		if (k%4 == 3) {
+			r.x = x_jetons;
+			r.y += 50;
+		} else {
+			r.x +=50;
+		}
+	}
+	b[NB_JETONS] = (Button) {r, black, white, NULL};
+	if (SetButtonTextTexture(renderer, &b[NB_JETONS], "A", 40, consola, black) != 0) return NULL;
+	
+
+	return b;
+}
+
+void FreeBoutonsJetons(Button* b) {
+	if (b != NULL) {
+		for(int k=0; k<NB_JETONS+1; k++) {
+			SDL_DestroyTexture(b[k].texture);
+		}
+		free(b);
+	}
+}
+
+int AfficherChoixJetons(SDL_Renderer* renderer, Button* jetons) {
+	for (int k=0; k<NB_JETONS+1; k++) {
+		if (AfficherBouton(renderer, &jetons[k]) != 0) return -1;
+	}
+	return 0;
+}
+
+int AffichageJetonChoisi(SDL_Renderer* renderer, int choixJ) {
+	char line1[100] = "Jeton :";
+	char text[100];
+	if (inBounds(choixJ, 0, NB_JETONS-1)) {
+		sprintf(text, " %d", choixJ);
+	} else {
+		sprintf(text, "%s", " Aleatoire");
+	}
+	
+	strcat(line1, text);
+	SetColor(renderer, white);
+	if (SDL_RenderFillRect(renderer, &(SDL_Rect) {x_choix, y_choix+30, 600, 20}) != 0) return -1;
+	if (PrintText(renderer, line1, FixedSys, black, 20, x_choix, y_choix + 30) != 0) return -1;
+
 	return 0;
 }

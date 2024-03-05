@@ -18,6 +18,18 @@
 
 #define BOARD_RADIUS 9
 #define BOARD_SIZE 19 //BOARD_SIZE = 2*BOARD_RADIUS + 1
+#define NB_JETONS 17
+#define NB_HEURISTIQUES 4
+
+static const SDL_Color blueButton = {100, 100, 255, 255};
+static const SDL_Color white = {255, 255, 255, 255};
+static const SDL_Color black = {0, 0, 0, 255};
+static const SDL_Color darkGrey = {100, 100, 100, 255};
+static const SDL_Color beige = {227,212,173, 255};
+static const SDL_Color blueviolet = {138, 43, 226, 255};
+static const SDL_Color magenta = {255, 0, 255, 255};
+static const char consola[] = "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/fonts/consola.ttf";
+static const char FixedSys[] = "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/fonts/FixedSys.ttf";
 
 
 /**************************TEXTURES***************************/
@@ -128,7 +140,7 @@ typedef struct Bouton {
 	SDL_Rect shape;
 	SDL_Color outline_color;
 	SDL_Color color;
-	SDL_Texture* texte;
+	SDL_Texture* texture;
 } Button;
 
 /***************GAMESTRUCT****************/
@@ -139,14 +151,22 @@ typedef struct GS {
 	dimTexture* jetons;
 	dimTexture* robots;
 
-	Zipper z;
 	Sommet actuel;
+	Point positionsJetons[NB_JETONS];
+	Button startButton;
+
+	Button* boutonsHeuristiques;
+	Button* boutonsJetons;
+	int choixH;
+	int choixJ;
+
+
+	Zipper z;	
+	Point positionJetons[NB_JETONS];
 	Hex board[BOARD_SIZE][BOARD_SIZE];
 	bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1];
 	bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1];
 	bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1];
-	Point positionJetons[17];
-	Button startButton;
 } GameStruct;
 
 
