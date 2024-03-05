@@ -15,6 +15,7 @@
 #include "textureManager.h"
 #include "interface.h"
 #include "astar.h"
+#include "comparaison.h"
 
 /*********************TODO****************************/
 /*
@@ -34,7 +35,6 @@ const int window_h = 800;
 
 const SDL_Color outline_bouton = {155, 155, 155, 255};
 const SDL_Color couleur_bouton = {50, 50, 50, 255};
-
 const SDL_Rect info_text_rect = {750, 100, 450, 200};
 
 
@@ -110,7 +110,6 @@ void HandleMouseClicks(GameStruct* g, SDL_Event* e) {
 		}
 	}
 }
-
 
 
 
@@ -197,6 +196,9 @@ int main (int argc, char** argv) {
 							AffichagePosition(g.renderer, g.actuel.dist, g.z.distance_totale);
 							break;
 
+						case SDLK_t:
+							recuperer(&g, "output.txt");
+							break;
 
 						case SDLK_f:
 							FreeZipper(g.z);
@@ -220,6 +222,6 @@ int main (int argc, char** argv) {
 	DestroyEverything (&g);
 	TTF_Quit();
 	SDL_Quit();
-
+	
 	return 0;
 }

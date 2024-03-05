@@ -9,14 +9,15 @@
 
 #include "graphe.h"
 #include "astar.h"
-#include "comparaison.h"
 #include "struct.h"
 #include "boardManager.h"
 
 #include "../include/SDL.h"
 #include "../include/SDL_ttf.h"
 
-int comparaison (GameStruct* g, Donnees* d);
+int comparaison (GameStruct* g, Donnees* d, int n);
 void AfficherDonnees (Donnees* d, int n);
+
+int recuperer(GameStruct* g, char* file);
 
 #endif //COMPARAISON

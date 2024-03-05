@@ -1,4 +1,5 @@
 #include "comparaison.h"
+#include <stdio.h>
 
 /********************************************************
 
@@ -131,14 +132,16 @@ void AfficherDonnees (Donnees* d, int n){
     }
 }
 
-int comparaison (GameStruct* g, Donnees* d){
-    int n ;
-    scanf("nombre d'iterations:%d",&n);
+void ImprimerDonees(FILE* flux, Donnees d, int k) {
+	fprintf(flux, "Numero %d : %d coups ; ", k, d.coups);
+	fprintf(flux, "Dijkstra : %lf s ; ", d.temps[0]);
+    fprintf(flux, "Euclidienne : %lf s ; ",d.temps[1]);
+    fprintf(flux, "Manhattan : %lf s ; ",d.temps[2]);
+    fprintf(flux, "Heuristique 3 : %lf s ;",d.temps[3]);
+	fprintf(flux, "\n");
+}
 
-    if (d != NULL) free (d);
-    d = malloc(n*sizeof(Donnees));
-    Donnees res;
-
+int comparaison (GameStruct* g, Donnees* d, int n){
     for (int i = 0; i<n; i++){
         // Plateau selection
         if (PlateauRandomJetonsEtMurs ( g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
@@ -151,9 +154,9 @@ int comparaison (GameStruct* g, Donnees* d){
 		int jeton;
 		jeton = RandomInt(0, 16);
 		Couleur c = jeton % 4;
-        
         for (int h = 0; h<NB_HEURISTIQUES; h++){
-            // g->choixH = h;
+            
+			FreeZipper(g->z);
             clock_t t1 = clock();
 	    	switch (h) {
                 case 0:
@@ -176,35 +179,31 @@ int comparaison (GameStruct* g, Donnees* d){
       		g->actuel.dist = 0;
         }
     }
-    return n;
+	return 0;
 }
 // en cours :
-int recuperer (GammeStruct* g, Donnees* d){
+int recuperer (GameStruct* g, char* file){
 	/* prendre les données et les ajouter à un fichier .txt */
-	char* fichier;
-	scanf("%s", &fichier);
-	FILE* flux = fopen(fichier, "a"); // on passe en 1er argument le nom du fichier
+	
+	FILE* flux = fopen(file, "a"); // on passe en 1er argument le nom du fichier
+	assert(flux != NULL);
 
-	fclose(flux);
-	return 0;
-}
-/*
-int main(int argc, char* argv[]) {
-	FILE* flux = fopen(argv[1], "r"); // on passe en 1er argument le nom du fichier
-	if (flux == NULL) printf("Erreur de lecture du fichier");
-	else {
-		char* famille = argv[2]; // on passe en 2nd argument un nom de famille
-		char nom[50];
-		char prenom[50]; // on prevoit de la place pour 49 caracteres max
-		int age;
-		printf("Famille %s :\n", famille);
-		while (fscanf(flux, "%s %s %d", nom, prenom, &age) != EOF) {
-			if (strcmp(famille, nom) == 0) { // le nom lu est le nom qu’on cherche
-				printf("- %s (%d ans)\n", prenom, age);
-			}
-		}
+	int n;
+	while(scanf("%d", &n) != 1) {
+		while(getchar());
 	}
+
+	Donnees* d = malloc(sizeof(Donnees)*n);
+	assert(d!=NULL);
+
+	if (comparaison(g, d, n) != 0) return -1;
+	fprintf(flux, "\n");
+	for(int i=0; i<n; i++) {
+		ImprimerDonees(flux, d[i], i);
+	}
+	AfficherDonnees(d, n);
+
+	free(d);
 	fclose(flux);
 	return 0;
 }
-*/
