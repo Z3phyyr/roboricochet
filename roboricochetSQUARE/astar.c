@@ -26,7 +26,10 @@ double h_3 (Sommet a, Point final, Couleur c) {
 }
 
 double h_yolo (Sommet a, Point final, Couleur c) {
-    double dist_yolo = abs(final.i - a.positions[c].i) + abs(final.j - a.positions[c].j);
+    double dist_yolo = 0;
+    for(int k=0; k<N_Robots; k++) {
+        dist_yolo += abs(final.i - a.positions[k].i) + abs(final.j - a.positions[k].j);
+    }
     return dist_yolo;
 }
 
