@@ -25,6 +25,10 @@ double h_3 (Sommet a, Point final, Couleur c) {
     return dist_man / max;
 }
 
+double h_yolo (Sommet a, Point final, Couleur c) {
+    double dist_yolo = abs(final.i - a.positions[c].i) + abs(final.j - a.positions[c].j);
+    return dist_yolo;
+}
 
 
 
@@ -57,10 +61,18 @@ Zipper a_star (Sommet s, Point t, Couleur couleur, double (*h) (Sommet ,Point , 
 
         if (tours % 100000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
        
-        if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j){
+       //Limite de distance
+		/*if (v.dist >= DISTANCE_LIMITE) {
+			FreeHashDist(&d);
+			FreeHashTbl(&hash);
+			FreeSList(descendants);
+			FreePMinStack(&file);
+			printf(ANSI_COLOR_YELLOW "Distance max atteinte !" ANSI_COLOR_RESET "\n");
+			return (Zipper) {NULL, NULL, -1};
+		} else*/ if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j){
             printf("Nombre total de tours : %d\n", tours);
-            FreePMinStack(&file);
             CopieSommet(v, &final);
+            FreePMinStack(&file);
         } else {
        	    descendants = DescendantsDirects(v, horizontalWalls, verticalWalls);
             while (descendants != NULL) {
@@ -74,11 +86,16 @@ Zipper a_star (Sommet s, Point t, Couleur couleur, double (*h) (Sommet ,Point , 
                     AjouteHashDist(w, &d);
                 }
             }
+            FreeSList(descendants);
         }
         tours++;
     }
-    FreeHashDist(&d);
 
+    FreeHashDist(&d);
+    //t non accessible (ne devrait pas arriver en pratique)
+    if (final.dist == -1) return (Zipper) {NULL, NULL, -1};
+
+    //Construction du chemin à l'aide de hash
     Chemin* chemin = NULL;
     Sommet courant;
     CopieSommet(final, &courant);
@@ -96,30 +113,3 @@ Zipper a_star (Sommet s, Point t, Couleur couleur, double (*h) (Sommet ,Point , 
     Zipper z = {NULL, chemin, final.dist}; 
 	return z;
 }
-
-
-/************** EXEMPLE DE FONTION AVEC UNE FONCTION EN ARGUMENT ***********************
-
-double carre (double x) { 
-    return x*x;
-}
-
-double integrale(double b_inf, double b_sup, int pas, double (*f)(double)){
-    double surface = 0.;
-    double h;
-    h = (b_sup - b_inf)/pas;
-    for(int i=0; i< pas; i++){
-        surface += h * (*f) (b_inf+i*h);
-    }
-    return surface;
-}
-
-void main(){
-   double b_inf, b_sup, aire;
-   int pas;
-   b_inf = 1., b_sup = 6., pas = 2000;
-   aire = integrale (b_inf, b_sup, pas, carre);
-   printf("Aire : %f\n", aire);
-}
-
-*/

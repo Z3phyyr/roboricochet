@@ -84,7 +84,7 @@ void HandleMouseClicks(GameStruct* g, SDL_Event* e) {
 				g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_manhattan, g->horizontalWalls, g->verticalWalls);
 				break;	
 			case 3:
-				g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_3, g->horizontalWalls, g->verticalWalls);		
+				g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_yolo, g->horizontalWalls, g->verticalWalls);		
 		}
 		clock_t t2 = clock();
 		printf("Temps d'éxécution = %f\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
@@ -135,11 +135,11 @@ int main (int argc, char** argv) {
 
 	/******************************************/
 	bool is_running = true;
-	char* init_str = "r";
+	char* init_str = "d";
 
 	//Génération aléatoire du plateau si pas la bonne dimension
 	if (BOARD_SIZE != 16) {
-		strcpy(init_str, "y");
+		strcpy(init_str, "r");
 	}
 
 	g.jetons = CreateDimTextureFromImage(g.renderer, "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/images/jetons.bmp", 1, 100, 100);
@@ -156,7 +156,8 @@ int main (int argc, char** argv) {
 	g.boutonsHeuristiques = InitBoutonsHeuristiques(g.renderer);
 	g.boutonsJetons = InitBoutonsJetons(g.renderer, g.jetons);
 	/******************************************/
-	throwwithCondition(InitializeRoboRicochet(&g, "yousk2") < 0, "Error during Game Initialisation", &g);
+	throwwithCondition(InitializeRoboRicochet(&g, init_str) < 0, "Error during Game Initialisation", &g);
+	
 	
 	
 	while (is_running) {
@@ -183,6 +184,13 @@ int main (int argc, char** argv) {
 							break;
 						case SDLK_r:
 							throwwithCondition(InitializeRoboRicochet(&g, "r") < 0, "Error during initialisation", &g);
+							Point p, q;
+							RandomPositionPasCentre(&p.i, &p.j);
+							RandomPositionPasCentre(&q.i, &q.j);
+
+							if(!Connexe(g.board, p, q, g.horizontalWalls, g.verticalWalls)) {
+								printf(ANSI_COLOR_MAGENTA "NON CONNEXE\n" ANSI_COLOR_RESET);
+							};
 							g.actuel.dist = 0;
 							break;
 						

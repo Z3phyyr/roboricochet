@@ -1,7 +1,4 @@
 #include "graphe.h"
-#include "hachage.h"
-#include <limits.h>
-#include <stdlib.h>
 
 //Modulo pour table de hachage
 const long unsigned mersenne = 524287;
@@ -251,8 +248,16 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	while (file.remplissage != 0) {
 		ExtraireMinStack(&file, &v);
 		if (tours % 100000 == 0) printf("dist : %d ; tours : %d\n", v.dist, tours);
-				
-		if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j) {
+
+		//Limite de distance
+		if (v.dist >= DISTANCE_LIMITE) {
+			FreeHashDist(&d);
+			FreeHashTbl(&h);
+			FreeSList(descendants);
+			FreeSMinStack(&file);
+			printf(ANSI_COLOR_YELLOW "Distance max atteinte !" ANSI_COLOR_RESET "\n");
+			return (Zipper) {NULL, NULL, -1};
+		} else if (v.positions[couleur].i == t.i && v.positions[couleur].j == t.j) {
 			printf("Nombre total de tours : %d\n", tours);
 			CopieSommet(v, &final);
 			FreeSMinStack(&file);
@@ -273,16 +278,12 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 		}
 		tours++;
 	}
-	
-	for (int k=0; k<N_Robots; k++) {
-		printf("(%d, %d)  ", final.positions[k].i, final.positions[k].j);
-	}
-	printf("\nDistance finale = %d\n", final.dist);
-	printf("hashtbl : w = %d; size = %d\n", h.w, h.size);
-	printf("hashdist :  w = %d; size = %d\n", d.w, d.size);
+	//printf("\nDistance finale = %d\n", final.dist);
+	//printf("hashtbl : w = %d; size = %d\n", h.w, h.size);
+	//printf("hashdist :  w = %d; size = %d\n", d.w, d.size);
 	FreeHashDist(&d);
 	//t non accessible (ne devrait pas arriver en pratique)
-	if (final.dist == -1) return (Zipper) {NULL, NULL, 0};
+	if (final.dist == -1) return (Zipper) {NULL, NULL, -1};
 	
 	//Construction du chemin à l'aide de h
 	Chemin* chemin = NULL;
@@ -300,6 +301,5 @@ Zipper Dijkstra(Sommet s, Point t, Couleur couleur,
 	}
 	FreeHashTbl(&h);
 	Zipper z = {NULL, chemin, final.dist};
-	
 	return z;
 }

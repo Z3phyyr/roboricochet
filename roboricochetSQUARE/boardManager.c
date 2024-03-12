@@ -1,10 +1,6 @@
 #include "boardManager.h"
 
 
-const SDL_Color sb_red = {160, 0, 5, 150};
-const SDL_Color sb_blue = {23, 78, 134, 150};
-const SDL_Color sb_green = {0, 127, 12, 150};
-const SDL_Color sb_yellow = {240, 244, 0, 150};
 
 
 
@@ -53,6 +49,47 @@ int DrawStartingBlock(SDL_Renderer* renderer, int i, int j, SDL_Color color) {
 	if (SDL_RenderFillRect(renderer, &rect) < 0) return -1;
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 	return 0;
+}
+
+bool Connexe (Square board[BOARD_SIZE][BOARD_SIZE], Point s, Point t,
+			  bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1], 
+			  bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1]) {
+	bool visite[BOARD_SIZE][BOARD_SIZE];
+	for(int k=0; k<BOARD_SIZE; k++) {
+		for(int l=0; l<BOARD_SIZE; l++) {
+			visite[k][l] = false;
+		}
+	}
+	visite[s.i][s.j] = true;
+	bool changement = true;
+	while (changement) {
+		changement = false;
+		if (visite[t.i][t.j]) return true;
+
+		for(int k=0; k<BOARD_SIZE; k++) {
+			for(int l=0; l<BOARD_SIZE; l++) {
+				if (visite[k][l]) {
+					if (!horizontalWalls[k][l] && l>0) { //Haut
+						visite[k][l-1] = true;
+						changement = true;
+					}
+					if (!verticalWalls[l][k+1] && k<BOARD_SIZE-1) { //Droite
+						visite[k+1][l] = true;
+						changement = true;
+					}
+					if (!horizontalWalls[k][l+1] && l<BOARD_SIZE-1) { //Bas
+						visite[k][l+1] = true;
+						changement = true;
+					}
+					if (!verticalWalls[l][k] && k>0) { //Gauche
+						visite[k-1][l] = true;
+						changement = true;
+					}
+				}
+			}
+		}
+	}
+	return false;			
 }
 
 
@@ -508,8 +545,8 @@ int SetupRandomRobots(SDL_Renderer* renderer, dimTexture* robots, Square board[B
 		RandomPositionPasCentre(&i, &j);
 
 		int max = 0;
-		while (board[i][j].finishSquare && board[i][j].startingBlock && max < 10000) {
-			//No starting block on finish block or on other starting block
+		while ((board[i][j].finishSquare || board[i][j].startingBlock) && max < 10000) {
+			//Not on finish block or on other starting block
 			RandomPositionPasCentre(&i, &j);
 			max++;
 		}
