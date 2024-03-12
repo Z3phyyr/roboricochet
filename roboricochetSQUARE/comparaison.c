@@ -1,19 +1,6 @@
 #include "comparaison.h"
 #include <stdio.h>
 
-/********************************************************
-
-Faire une fonction pour comparer les heuristiques (choix des heuristiques?)
-sur un nombre de plateaux prédéfinis (scanf + for)
-avec le même item à chercher sur le même tableau et on change de tableau à chaque boucle
-
-TO DO :
-    - vérifier les structures utilisées 
-    - faire une fonction "print", "free"...
-    - free d dans main.c
-    - tester la fonction
-
-*********************************************************/
 int PlateauRandomJetonsEtMurs (dimTexture* jetons, Point positionJetons[16], Square board[BOARD_SIZE][BOARD_SIZE],
 							  bool horizontalWalls[BOARD_SIZE][BOARD_SIZE + 1], bool verticalWalls[BOARD_SIZE][BOARD_SIZE + 1]){
 
@@ -74,7 +61,7 @@ int PlateauRandomJetonsEtMurs (dimTexture* jetons, Point positionJetons[16], Squ
 		int i, j;
 		RandomPositionPasCentre(&i, &j);
 		int max = 0;
-		while (board[i][j].finishSquare && max < 10000) { 
+		while (board[i][j].finishSquare && max < 10000) {
 			//No two symbols on same square
 			RandomPositionPasCentre(&i, &j);
 			max++;
@@ -86,8 +73,8 @@ int PlateauRandomJetonsEtMurs (dimTexture* jetons, Point positionJetons[16], Squ
 		board[i][j].finishColor = k%4;
 
 		/****Murs autour du jeton********/
-		int dj = RandomInt(0, 1); 
-		int di = RandomInt(0, 1); 
+		int dj = RandomInt(0, 1);
+		int di = RandomInt(0, 1);
 		horizontalWalls[i][j + dj] = true;
 		verticalWalls[j][i + di] = true;
     }
@@ -121,6 +108,7 @@ int RobotsRandom (dimTexture* robots, Square board[BOARD_SIZE][BOARD_SIZE], Somm
 	return 0;
 }
 
+/*
 void AfficherDonnees (Donnees* d, int n){
     for (int i = 0 ; i<n ; i++){
         printf("Plateau %d : %d coups\n", i, d[i].coups);
@@ -133,16 +121,18 @@ void AfficherDonnees (Donnees* d, int n){
 }
 
 void ImprimerDonees(FILE* flux, Donnees d, int k) {
-	fprintf(flux, "Numero %d : %d coups ; ", k, d.coups);
-	fprintf(flux, "Dijkstra : %lf s ; ", d.temps[0]);
-    fprintf(flux, "Euclidienne : %lf s ; ",d.temps[1]);
-    fprintf(flux, "Manhattan : %lf s ; ",d.temps[2]);
-    fprintf(flux, "Heuristique 3 : %lf s ;",d.temps[3]);
+	fprintf(flux, "%d;", d.coups);
+	fprintf(flux, "%lf;", d.temps[0]);
+    fprintf(flux, "%lf;",d.temps[1]);
+    fprintf(flux, "%lf;",d.temps[2]);
+    fprintf(flux, "%lf;",d.temps[3]);
 	fprintf(flux, "\n");
 }
+*/
 
-int comparaison (GameStruct* g, Donnees* d, int n){
+int comparaison (GameStruct* g, int n, FILE* flux){
     for (int i = 0; i<n; i++){
+		printf("Plateau %d",i);
         // Plateau selection
         if (PlateauRandomJetonsEtMurs ( g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
 			RobotsRandom (g->robots,g->board, &g->actuel) < 0) {
@@ -154,34 +144,40 @@ int comparaison (GameStruct* g, Donnees* d, int n){
 		int jeton;
 		jeton = RandomInt(0, 16);
 		Couleur c = jeton % 4;
-        for (int h = 0; h<NB_HEURISTIQUES; h++){
-            
-			FreeZipper(g->z);
-            clock_t t1 = clock();
-	    	switch (h) {
-                case 0:
-                    g->z = Dijkstra(g->actuel, g->positionsJetons[jeton], c, g->horizontalWalls, g->verticalWalls);
-                    d[i].coups = g->z.distance_totale;
-                    break;
-                case 1:
-                    g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_euclidienne, g->horizontalWalls, g->verticalWalls);
-                    break;
-                case 2:
-                    g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_manhattan, g->horizontalWalls, g->verticalWalls);
-                    break;	
-                case 3:
-                    g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_3, g->horizontalWalls, g->verticalWalls);
-                    break;
-            }
-            clock_t t2 = clock();
-    		d[i].temps[h] =  (double)(t2 - t1) / CLOCKS_PER_SEC;
-            if (g->z.distance_totale != d[i].coups) return -1;
-      		g->actuel.dist = 0;
-        }
+		fprintf(flux, "Plateau %d;;",i);
+		for (int k = 0; k < 100; k++){
+			fprintf(flux, ";");
+			printf("  ¤ Tour %d\n", k);
+			for (int h = 0; h<NB_HEURISTIQUES; h++){
+				FreeZipper(g->z);
+				clock_t t1 = clock();
+				switch (h) {
+					case 0:
+						g->z = Dijkstra(g->actuel, g->positionsJetons[jeton], c, g->horizontalWalls, g->verticalWalls);
+						break;
+					case 1:+0
+						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_euclidienne, g->horizontalWalls, g->verticalWalls);
+						break;
+					case 2:
+						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_manhattan, g->horizontalWalls, g->verticalWalls);
+						break;	
+					case 3:
+						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_3, g->horizontalWalls, g->verticalWalls);
+						break;
+				}
+				clock_t t2 = clock();
+				fprintf(flux, "%lf;", (double)(t2 - t1) / CLOCKS_PER_SEC);
+				g->actuel.dist = 0;	
+				printf("    - heuristique %d\n", h);
+			}
+			fprintf(flux, "%d;", g->z.distance_totale);
+			fprintf(flux, "\n");
+		}
+		fprintf(flux, "\n");
     }
 	return 0;
 }
-// en cours :
+
 int recuperer (GameStruct* g, char* file){
 	/* prendre les données et les ajouter à un fichier .txt */
 	
@@ -196,14 +192,8 @@ int recuperer (GameStruct* g, char* file){
 	Donnees* d = malloc(sizeof(Donnees)*n);
 	assert(d!=NULL);
 
-	if (comparaison(g, d, n) != 0) return -1;
-	fprintf(flux, "\n");
-	for(int i=0; i<n; i++) {
-		ImprimerDonees(flux, d[i], i);
-	}
-	AfficherDonnees(d, n);
+	if (comparaison(g, n, flux) != 0) return -1;
 
-	free(d);
 	fclose(flux);
 	return 0;
 }
