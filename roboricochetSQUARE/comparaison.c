@@ -132,7 +132,7 @@ void ImprimerDonees(FILE* flux, Donnees d, int k) {
 
 int comparaison (GameStruct* g, int n, FILE* flux){
     for (int i = 0; i<n; i++){
-		printf("Plateau %d",i);
+		printf("Plateau %d\n",i);
         // Plateau selection
         if (PlateauRandomJetonsEtMurs ( g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
 			RobotsRandom (g->robots,g->board, &g->actuel) < 0) {
@@ -155,17 +155,18 @@ int comparaison (GameStruct* g, int n, FILE* flux){
 					case 0:
 						g->z = Dijkstra(g->actuel, g->positionsJetons[jeton], c, g->horizontalWalls, g->verticalWalls);
 						break;
-					case 1:+0
+					case 1:
 						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_euclidienne, g->horizontalWalls, g->verticalWalls);
 						break;
 					case 2:
 						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_manhattan, g->horizontalWalls, g->verticalWalls);
 						break;	
 					case 3:
-						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, h_3, g->horizontalWalls, g->verticalWalls);
+						g->z = a_star(g->actuel, g->positionsJetons[jeton], c, yolo, g->horizontalWalls, g->verticalWalls);
 						break;
 				}
 				clock_t t2 = clock();
+				if (h==0){fprintf(flux, "%d;", g->z.distance_totale);}
 				fprintf(flux, "%lf;", (double)(t2 - t1) / CLOCKS_PER_SEC);
 				g->actuel.dist = 0;	
 				printf("    - heuristique %d\n", h);
