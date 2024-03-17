@@ -131,22 +131,25 @@ void ImprimerDonees(FILE* flux, Donnees d, int k) {
 */
 
 int comparaison (GameStruct* g, int n, FILE* flux){
-    for (int i = 0; i<n; i++){
-		printf("Plateau %d\n",i);
-        // Plateau selection
-        if (PlateauRandomJetonsEtMurs ( g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
+	for (int i = 0; i<n; i++){
+	
+		int plateau = (int) time(NULL);
+		printf("Plateau %d\n",plateau);
+
+		// Plateau selection
+		if (PlateauRandomJetonsEtMurs ( g->jetons, g->positionsJetons, g->board, g->horizontalWalls, g->verticalWalls) < 0 ||
 			RobotsRandom (g->robots,g->board, &g->actuel) < 0) {
-                return -1;
-        }
+				return -1;
+		}
 		g->actuel.dist = 0;
 		
-        //Jeton selection
+		//Jeton selection
 		int jeton;
 		jeton = RandomInt(0, 16);
 		Couleur c = jeton % 4;
-		fprintf(flux, "Plateau %d;;",i);
+		
 		for (int k = 0; k < 100; k++){
-			fprintf(flux, ";");
+			fprintf(flux, "%d;",plateau);
 			printf("  ¤ Tour %d\n", k);
 			for (int h = 0; h<NB_HEURISTIQUES; h++){
 				FreeZipper(g->z);
@@ -174,8 +177,8 @@ int comparaison (GameStruct* g, int n, FILE* flux){
 			fprintf(flux, "%d;", g->z.distance_totale);
 			fprintf(flux, "\n");
 		}
-		fprintf(flux, "\n");
     }
+	printf("Fin\n");
 	return 0;
 }
 
