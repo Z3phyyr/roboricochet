@@ -28,9 +28,24 @@ static const SDL_Color darkGrey = {100, 100, 100, 255};
 static const SDL_Color beige = {227,212,173, 255};
 static const SDL_Color blueviolet = {138, 43, 226, 255};
 static const SDL_Color magenta = {255, 0, 255, 255};
+
+static const SDL_Color sb_red = {160, 0, 5, 150};
+static const SDL_Color sb_blue = {23, 78, 134, 150};
+static const SDL_Color sb_green = {0, 127, 12, 150};
+static const SDL_Color sb_yellow = {240, 244, 0, 150};
+
 static const char consola[] = "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/fonts/consola.ttf";
 static const char FixedSys[] = "C:/Program_Files/OCaml64/home/Admin/C/SDL/roboricochetSQUARE/fonts/FixedSys.ttf";
 
+/***********************TERMINAL COLOURS**********************/
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 /**************************TEXTURES***************************/
 
@@ -143,6 +158,7 @@ typedef struct Bouton {
 	SDL_Texture* texture;
 } Button;
 
+
 /***************GAMESTRUCT****************/
 
 typedef struct GS {
@@ -152,7 +168,7 @@ typedef struct GS {
 	dimTexture* robots;
 
 	Sommet actuel;
-	Point positionsJetons[NB_JETONS];
+	Point positionJetons[NB_JETONS];
 	Button startButton;
 
 	Button* boutonsHeuristiques;
@@ -162,7 +178,6 @@ typedef struct GS {
 
 
 	Zipper z;	
-	Point positionJetons[NB_JETONS];
 	Hex board[BOARD_SIZE][BOARD_SIZE];
 	bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1];
 	bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1];

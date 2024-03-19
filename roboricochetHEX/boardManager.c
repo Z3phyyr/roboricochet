@@ -4,15 +4,7 @@
 
 
 
-const SDL_Color white = {255, 255, 255, 255};
-const SDL_Color black = {0, 0, 0, 255};
-const SDL_Color darkGrey = {100, 100, 100, 255};
-const SDL_Color beige = {227,212,173, 255};
 
-const SDL_Color sb_red = {160, 0, 5, 150};
-const SDL_Color sb_blue = {23, 78, 134, 150};
-const SDL_Color sb_green = {0, 127, 12, 150};
-const SDL_Color sb_yellow = {240, 244, 0, 150};
 
 const int x_offset = 20;
 const int y_offset = 10;
@@ -272,6 +264,73 @@ int DrawStartingBlock(SDL_Renderer* renderer, int q, int r, SDL_Color color) {
 	return 0;
 }
 
+void CopieVisites(bool t1[BOARD_SIZE][BOARD_SIZE], bool t2[BOARD_SIZE][BOARD_SIZE]) {
+	for(int k=0; k<BOARD_SIZE; k++) {
+		for(int l=0; l<BOARD_SIZE; l++) {
+			t2[k][l] = t1[k][l];
+		}
+	}
+}
+
+bool EgaliteVisites(bool t1[BOARD_SIZE][BOARD_SIZE], bool t2[BOARD_SIZE][BOARD_SIZE]) {
+	for(int k=0; k<BOARD_SIZE; k++) {
+		for(int l=0; l<BOARD_SIZE; l++) {
+			if (t2[k][l] != t1[k][l]) return false;
+		}
+	}
+	return true;
+}
+
+bool Connexe(Hex board[BOARD_SIZE][BOARD_SIZE], Point s, Point t, 
+			 bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
+			 bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
+			 bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]) {
+	
+	bool visite[BOARD_SIZE][BOARD_SIZE];
+	bool visite2[BOARD_SIZE][BOARD_SIZE];
+	for(int q=0; q<BOARD_SIZE; q++) {
+		for(int r=0; r<BOARD_SIZE; r++) {
+			visite[q][r] = false;
+			visite2[q][r] = false;
+		}
+	}
+	
+	visite2[s.q][s.r] = true;
+	while (!EgaliteVisites(visite, visite2)) {
+		CopieVisites(visite2, visite);
+		if (visite[t.q][t.r]) return true;
+
+		for(int q=0; q<BOARD_SIZE; q++) {
+			for(int r=0; r<BOARD_SIZE; r++) {
+				if (visite2[q][r]) {
+					if (q>0 && !VerticalWalls[q][r]) { //Gauche
+						visite2[q-1][r] = true;
+					}
+					if (r>0 && !DiagupWalls[q][r]) { //Haut Gauche
+						visite2[q][r-1] = true;
+					}
+					if (q<BOARD_SIZE-1 && r>0 && !DiagDownWalls[q+1][r]) { //Haut Droite
+						visite2[q+1][r-1] = true;
+					}
+					if (q<BOARD_SIZE-1 && !VerticalWalls[q+1][r]) { //Droite
+						visite2[q+1][r] = true;
+					}
+					if(r<BOARD_SIZE-1 && !DiagupWalls[q][r+1]) { //Bas Droite
+						visite2[q][r+1] = true;
+					}
+					if (r<BOARD_SIZE-1 && q>0 && !DiagDownWalls[q][r+1]) { //Bas Gauche
+						visite2[q-1][r+1] = true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+
+
+
 /**************************************************************************/
 
 int SetupEmptyBoard(SDL_Renderer* renderer) {
@@ -470,6 +529,13 @@ int InitializeRoboRicochet(GameStruct* g, char* id) {
 		SetupNormalRobots(g->renderer, g->robots, &g->actuel, g->board);
 		FreeZipper(&g->z);
 	}
+	if (AfficherChoixHeuristiques(g->renderer, g->boutonsHeuristiques) != 0 
+		|| AfficherChoixJetons(g->renderer,g->boutonsJetons) != 0
+		|| AffichageHeuristiqueChoisie(g->renderer, g->choixH) != 0
+		|| AffichageJetonChoisi(g->renderer, g->choixJ)) {
+			return -1;
+	}
+	
 	return AfficherBouton(g->renderer, &g->startButton);
 }
 

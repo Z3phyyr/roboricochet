@@ -25,7 +25,8 @@ typedef enum Walltype {
 
 
 void SetColor(SDL_Renderer *renderer, SDL_Color color);
-
+int RandomInt(int min, int max);
+Point RandomPoint(const int r_min[BOARD_SIZE], const int r_max[BOARD_SIZE]);
 void GetTopCoordinates(int q, int r, int* x, int* y);
 void GetPrintingCoordinates(int q, int r, int* x, int* y);
 
@@ -34,6 +35,11 @@ int DrawVerticalWall(SDL_Renderer* renderer, int q_left, int r);
 int DrawDiagUpWall(SDL_Renderer* renderer, int q, int r_bot);
 int DrawDiagDownWall(SDL_Renderer* renderer, int q_bot, int r_bot);
 int DrawJeton(SDL_Renderer* renderer, dimTexture* jetons, const int numero, Point position);
+
+bool Connexe(Hex board[BOARD_SIZE][BOARD_SIZE], Point s, Point t, 
+			 bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1],
+			 bool DiagupWalls[BOARD_SIZE+1][BOARD_SIZE+1],
+			 bool DiagDownWalls[BOARD_SIZE+1][BOARD_SIZE+1]); 
 
 int DeplaceDroite(SDL_Renderer *renderer, dimTexture *robots, dimTexture *jetons, Sommet *actuel, Hex board[BOARD_SIZE][BOARD_SIZE], Zipper *z);
 int DeplaceGauche(SDL_Renderer* renderer, dimTexture* robots, dimTexture* jetons, Sommet* actuel, Hex board[BOARD_SIZE][BOARD_SIZE], Zipper* z);

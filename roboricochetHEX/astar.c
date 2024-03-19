@@ -16,18 +16,12 @@ double h_manhattan (Sommet a, Point final, Couleur c) {
     return dist_man / max;
 } 
 
-double h_3 (Sommet a, Point final, Couleur c) {
-    double max = BOARD_SIZE*2*N_Robots;
+double h_rapide (Sommet a, Point final, Couleur c) {
     double dist_man = 0;
     for(int k=0; k<N_Robots; k++) {
         dist_man += abs(final.q - a.positions[k].q) + abs(final.r - a.positions[k].r);
     }
-    return dist_man / max;
-}
-
-double h_4 (Sommet a, Point final, Couleur c) {
-
-    return 0;
+    return dist_man;
 }
 
 

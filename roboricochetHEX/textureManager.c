@@ -235,5 +235,5 @@ int PrintFormatText(SDL_Renderer* renderer, const char* fontPath,
 				break;
 		}
 	}
-
+	return 0;
 }

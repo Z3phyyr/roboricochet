@@ -14,6 +14,7 @@
 #include "errorManager.h"
 #include "boardManager.h"
 #include "textureManager.h"
+#include "comparaison.h"
 
 /*********************TODO****************************/
 /*
@@ -32,17 +33,51 @@ const SDL_Color outline_bouton = {155, 155, 155, 255};
 const SDL_Color couleur_bouton = {50, 50, 50, 255};
 
 
+
+
+
+
+
 void HandleMouseClicks(GameStruct* g, SDL_Event* e) {
 	if (CheckBoutonPresse(&g->startButton, e->motion.x, e->motion.y)) {
 		FreeZipper(&g->z);
-		const int jeton = rand () % 16;
+
+		//Jeton selection
+		int jeton;
+		if (inBounds(g->choixJ, 0, 16)) {
+			jeton = g->choixJ;
+		} else {
+			jeton = RandomInt(0, 16);
+		}
+		Element e = jeton / 4;
+		Couleur c = jeton % 4;
+
+		//Central token display
 		SetColor(g->renderer, black);
 		throwwithCondition(FillCenterHexagon(g->renderer) != 0 
 							|| DrawJeton(g->renderer, g->jetons, jeton, (Point){BOARD_RADIUS, BOARD_RADIUS}) != 0, 
 							"Central token display triggered an exception", g);
 		SDL_RenderPresent(g->renderer);
+
+		//Selection of Algorithm
+		if (!inBounds(g->choixH, 0, NB_HEURISTIQUES-1)) {
+			g->choixH = RandomInt(0, NB_HEURISTIQUES-1);
+		}
 		clock_t t1 = clock();
-		g->z = Dijkstra(g->actuel, g->positionJetons[jeton], jeton % 4, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+		switch (g->choixH) {
+					case 0:
+						g->z = Dijkstra(g->actuel, g->positionJetons[jeton], c, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+						break;
+					case 1:
+						g->z = a_star(g->actuel, g->positionJetons[jeton], c, h_euclidienne, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+						break;
+					case 2:
+						g->z = a_star(g->actuel, g->positionJetons[jeton], c, h_manhattan, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+						break;	
+					case 3:
+						g->z = a_star(g->actuel, g->positionJetons[jeton], c, h_rapide, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+						break;
+				}
 		clock_t t2 = clock();
 		printf("Temps d'exécution : %f\n", ((double)(t2-t1))/CLOCKS_PER_SEC);
 		AffichageTexteInformatif(g->renderer, g->z.distance_totale);
@@ -62,7 +97,57 @@ void HandleMouseClicks(GameStruct* g, SDL_Event* e) {
 	}
 }
 
+void HandleKeyPresses(GameStruct* g, SDL_Event* e, bool* is_running) {
+	switch (e->key.keysym.sym) {
+		case SDLK_ESCAPE:
+			*is_running = false;
+			break;
+		case SDLK_r: 
+			throwwithCondition(InitializeRoboRicochet(g, "r") != 0, 
+				"Initialize RoboRicochet triggered an exception", g);
+			break;
+		case SDLK_w: 
+			throwwithCondition(InitializeRoboRicochet(g, "w") != 0, 
+				"Initialize RoboRicochet triggered an exception", g);
+			break;
+		case SDLK_d:
+			throwwithCondition(InitializeRoboRicochet(g, "d") != 0, 
+				"Initialize RoboRicochet triggered an exception", g);
+			break;
+				
+		case SDLK_RIGHT:
+			throwwithCondition(DeplaceDroite(g->renderer, g->robots, g->jetons, &g->actuel, g->board, &g->z), "DeplaceDroite triggered an exception", g);
+			AffichagePosition(g->renderer, g->actuel.dist, g->z.distance_totale);							
+			break;
+						
+		case SDLK_LEFT:
+			throwwithCondition(DeplaceGauche(g->renderer, g->robots, g->jetons, &g->actuel, g->board, &g->z), "DeplaceGauche triggered an exception", g);
+			AffichagePosition(g->renderer, g->actuel.dist, g->z.distance_totale);
+			break;
 
+		case SDLK_t:
+			recuperer(g, "outputHEX.txt");
+			break;
+
+		case SDLK_k: { 
+			printf("Actuel :\n");
+			int q, r, s;
+			for (int k=0; k<N_Robots; k++) {
+				q = g->actuel.positions[k].q;
+				r = g->actuel.positions[k].r;
+				s = q + r - 9;
+				printf("(%d, %d, %d) ", q, r, s);
+			}
+			printf("\n\n");
+			SList* desc = DescendantsDirects(g->actuel, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+			AfficherSList(desc);
+			FreeSList(desc);
+			}
+			break;
+						
+			default:break;
+	}
+}
 
 int main(int argc, char** argv) {
 	GameStruct g;
@@ -107,7 +192,7 @@ int main(int argc, char** argv) {
 
 	throwwithCondition(InitializeRoboRicochet(&g, "") != 0, "Initialize RoboRicochet triggered an exception", &g);
 	
-
+	
 	while(is_running) {
 		SDL_Event e;
 		while(SDL_PollEvent(&e)) {
@@ -120,51 +205,7 @@ int main(int argc, char** argv) {
 					break;
 
 				case SDL_KEYDOWN:
-					switch (e.key.keysym.sym) {
-						case SDLK_ESCAPE:
-							is_running = false;
-							break;
-						case SDLK_r: 
-							throwwithCondition(InitializeRoboRicochet(&g, "r") != 0, 
-									"Initialize RoboRicochet triggered an exception", &g);
-							break;
-						case SDLK_w: 
-							throwwithCondition(InitializeRoboRicochet(&g, "w") != 0, 
-									"Initialize RoboRicochet triggered an exception", &g);
-							break;
-						case SDLK_d:
-							throwwithCondition(InitializeRoboRicochet(&g, "d") != 0, 
-								"Initialize RoboRicochet triggered an exception", &g);
-							break;
-						
-						case SDLK_RIGHT:
-							throwwithCondition(DeplaceDroite(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &g.z), "DeplaceDroite triggered an exception", &g);
-							AffichagePosition(g.renderer, g.actuel.dist, g.z.distance_totale);							
-							break;
-						
-						case SDLK_LEFT:
-							throwwithCondition(DeplaceGauche(g.renderer, g.robots, g.jetons, &g.actuel, g.board, &g.z), "DeplaceGauche triggered an exception", &g);
-							AffichagePosition(g.renderer, g.actuel.dist, g.z.distance_totale);
-							break;
-
-						case SDLK_t: { 
-							printf("Actuel :\n");
-							int q, r, s;
-							for (int k=0; k<N_Robots; k++) {
-								q = g.actuel.positions[k].q;
-								r = g.actuel.positions[k].r;
-								s = q + r - 9;
-								printf("(%d, %d, %d) ", q, r, s);
-							}
-							printf("\n\n");
-							SList* desc = DescendantsDirects(g.actuel, g.VerticalWalls, g.DiagupWalls, g.DiagDownWalls);
-							AfficherSList(desc);
-							FreeSList(desc);
-							}
-							break;
-
-						default: break;
-					}
+					HandleKeyPresses(&g, &e, &is_running);
 					break;
 				
 				

@@ -1,7 +1,7 @@
 #include "strategies.h"
 
 
-Zipper DijkstraLimiteAutresRobots(Sommet s, Point t, Couleur couleur, unsigned CoupsMaxAutresRobots,
+Zipper DijkstraLimiteAutresRobots(Sommet s, Point t, Couleur couleur, const unsigned CoupsMaxAutresRobots,
 				 bool VerticalWalls[BOARD_SIZE+1][BOARD_SIZE+1], 
 				 bool DiagupWalls[BOARD_SIZE + 1][BOARD_SIZE+1],
 				 bool DiagDownWalls[BOARD_SIZE + 1][BOARD_SIZE + 1]) {
@@ -48,7 +48,6 @@ Zipper DijkstraLimiteAutresRobots(Sommet s, Point t, Couleur couleur, unsigned C
 				}
 			}
 			FreeSList(descendants);
-			
 		}
 		tours++;
 	}
