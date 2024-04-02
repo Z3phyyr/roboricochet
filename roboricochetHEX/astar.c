@@ -24,7 +24,9 @@ double h_rapide (Sommet a, Point final, Couleur c) {
     return dist_man;
 }
 
-
+double dijkstra (Sommet a, Point final, Couleur c) {
+    return 0;
+}
 
 //fonction principale
 Zipper a_star (Sommet s, Point t, Couleur couleur, double (*h) (Sommet ,Point , Couleur) /*fonction heuristique*/,
