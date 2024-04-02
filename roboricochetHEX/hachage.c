@@ -65,10 +65,12 @@ void RedimmensionerHashTbl(HashTbl* h) {
 void AjouteHashTbl(Sommet cle, Sommet valeur, HashTbl *h) {
   	/*
 		Ajoute sans doublons le couple (cle, valeur) dans h
-	*/
+	
 	if (h->w < h->size) {
 		RedimmensionerHashTbl(h);
 	}
+	
+ 	*/
 	const int hache = Hachage(h->w, cle);
 	CList* l = h->table[hache];
 	while (l != NULL) {
