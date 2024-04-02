@@ -74,7 +74,7 @@ int comparaison (GameStruct* g, int n, FILE* flux) {
 				clock_t t1 = clock();
 				switch (h) {
 					case 0:
-						g->z = Dijkstra(g->actuel, g->positionJetons[jeton], c, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
+						g->z = a_star(g->actuel, g->positionJetons[jeton], c, dijkstra, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
 						break;
 					case 1:
 						g->z = a_star(g->actuel, g->positionJetons[jeton], c, h_euclidienne, g->VerticalWalls, g->DiagupWalls, g->DiagDownWalls);
